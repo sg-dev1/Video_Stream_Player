@@ -1,0 +1,15 @@
+*.o
+*.so
+
+*.pyc
+
+# ide excludes
+.idea/
+
+# python module build dir
+build
+
+# place where lib Bento4 should be cloned
+lib/Bento4
+
+lib/WidevineCdm

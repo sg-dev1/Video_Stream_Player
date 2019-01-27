@@ -1,0 +1,11 @@
+#
+#!/bin/bash
+#
+COMMAND_STR=***REMOVED***LD_LIBRARY_PATH=/usr/local/lib python prime_video_cli.py***REMOVED***
+
+eval $COMMAND_STR ***REMOVED***$@***REMOVED*** |
+ awk '/^\[WARN \].*$/{ printf ***REMOVED***%c[33m%s%c[0m\n***REMOVED***,27,$0,27 ; next} 
+      /^\[ERROR\].*$/{ printf ***REMOVED***%c[31m%s%c[0m\n***REMOVED***,27,$0,27 ; next}
+      /^\[FATAL\].*$/{ printf ***REMOVED***%c[35m%s%c[0m\n***REMOVED***,27,$0,27 ; next}
+      /^\[DEBUG\].*$/{ printf ***REMOVED***%c[30m%s%c[0m\n***REMOVED***,27,$0,27 ; next}
+      { print ; }'

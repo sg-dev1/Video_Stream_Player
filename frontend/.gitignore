@@ -1,0 +1,9 @@
+settings.json
+cookies.lwp
+cookies.lwp.backup
+cookies.txt
+cookies.txt.backup
+
+priv_run.sh
+
+__pycache__

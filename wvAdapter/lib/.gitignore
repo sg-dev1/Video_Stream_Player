@@ -1,0 +1,4 @@
+build
+cmake-build-debug
+# these files must be added manually by a user
+tests/data/renderer/priv
