@@ -39,6 +39,9 @@ git clone <repo-url>
 
 # Get and build dependencies
 cd widevine_adapter/lib
+# download widevine cdm
+./get_cdm.sh
+# Clone and build Bento4 library
 # Note the master branch is always tested/used
 git clone https://github.com/sg-dev1/Bento4.git
 cd Bento4
