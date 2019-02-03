@@ -1,17 +1,17 @@
-<?xml version=***REMOVED***1.0***REMOVED*** ?>
-<MPD mediaPresentationDuration=***REMOVED***PT30.030S***REMOVED*** minBufferTime=***REMOVED***PT23.32S***REMOVED*** profiles=***REMOVED***urn:mpeg:dash:profile:isoff-live:2011***REMOVED*** type=***REMOVED***static***REMOVED*** xmlns=***REMOVED***urn:mpeg:dash:schema:mpd:2011***REMOVED*** xmlns:cenc=***REMOVED***urn:mpeg:cenc:2013***REMOVED***>
+<?xml version="1.0" ?>
+<MPD mediaPresentationDuration="PT30.030S" minBufferTime="PT23.32S" profiles="urn:mpeg:dash:profile:isoff-live:2011" type="static" xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:cenc="urn:mpeg:cenc:2013">
   <!-- Created with Bento4 mp4-dash.py, VERSION=1.8.0-622 -->
   <Period>
     <!-- Video -->
-    <AdaptationSet maxHeight=***REMOVED***1080***REMOVED*** maxWidth=***REMOVED***1920***REMOVED*** mimeType=***REMOVED***video/mp4***REMOVED*** minHeight=***REMOVED***1080***REMOVED*** minWidth=***REMOVED***1920***REMOVED*** segmentAlignment=***REMOVED***true***REMOVED*** startWithSAP=***REMOVED***1***REMOVED***>
+    <AdaptationSet maxHeight="1080" maxWidth="1920" mimeType="video/mp4" minHeight="1080" minWidth="1920" segmentAlignment="true" startWithSAP="1">
       <!-- MPEG Common Encryption -->
-      <ContentProtection cenc:default_KID=***REMOVED***90351951-686b-5e1b-a222-439ecec1f12a***REMOVED*** schemeIdUri=***REMOVED***urn:mpeg:dash:mp4protection:2011***REMOVED*** value=***REMOVED***cenc***REMOVED***/>
+      <ContentProtection cenc:default_KID="90351951-686b-5e1b-a222-439ecec1f12a" schemeIdUri="urn:mpeg:dash:mp4protection:2011" value="cenc"/>
       <!-- Widevine -->
-      <ContentProtection schemeIdUri=***REMOVED***urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed***REMOVED***>
+      <ContentProtection schemeIdUri="urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed">
         <cenc:pssh>AAAARnBzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAACYIARIQkDUZUWhrXhuiIkOezsHxKhoNd2lkZXZpbmVfdGVzdCIBKg==</cenc:pssh>
       </ContentProtection>
-      <SegmentTemplate duration=***REMOVED***23323***REMOVED*** initialization=***REMOVED***$RepresentationID$/init.mp4***REMOVED*** media=***REMOVED***$RepresentationID$/seg-$Number$.m4s***REMOVED*** startNumber=***REMOVED***1***REMOVED*** timescale=***REMOVED***1000***REMOVED***/>
-      <Representation bandwidth=***REMOVED***9574703***REMOVED*** codecs=***REMOVED***avc1.640028***REMOVED*** frameRate=***REMOVED***2997/100***REMOVED*** height=***REMOVED***1080***REMOVED*** id=***REMOVED***video/avc1***REMOVED*** scanType=***REMOVED***progressive***REMOVED*** width=***REMOVED***1920***REMOVED***/>
+      <SegmentTemplate duration="23323" initialization="$RepresentationID$/init.mp4" media="$RepresentationID$/seg-$Number$.m4s" startNumber="1" timescale="1000"/>
+      <Representation bandwidth="9574703" codecs="avc1.640028" frameRate="2997/100" height="1080" id="video/avc1" scanType="progressive" width="1920"/>
     </AdaptationSet>
   </Period>
 </MPD>

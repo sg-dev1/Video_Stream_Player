@@ -1,7 +1,7 @@
 #ifndef SDL_AUDIO_RENDERER_
 #define SDL_AUDIO_RENDERER_
 
-#include ***REMOVED***renderer.h***REMOVED***
+#include "renderer.h"
 
 #include <SDL2/SDL.h>
 #include <mutex>

@@ -16,12 +16,12 @@ import constants
 import mpd
 from util import settingsManagerSingleton, ApplicationException, buildWidevineInitDataString
 
-BASE_URL = ***REMOVED***https://www.amazon.de***REMOVED***
-LICENSE_SERVER = ***REMOVED***https://atv-ps-eu.amazon.de***REMOVED***
-#FILMINFO_RES = ***REMOVED***AudioVideoUrls,CatalogMetadata,ForcedNarratives,SubtitlePresets,SubtitleUrls,TransitionTimecodes,***REMOVED*** \
-#               ***REMOVED***TrickplayUrls,CuepointPlaylist,XRayMetadata,PlaybackSettings***REMOVED***
-FILMINFO_RES = ***REMOVED***PlaybackUrls,CatalogMetadata,ForcedNarratives,SubtitlePresets,SubtitleUrls,TransitionTimecodes,TrickplayUrls,CuepointPlaylist,XRayMetadata,PlaybackSettings***REMOVED***
-WIDEVINE2LICENSE_RES = ***REMOVED***Widevine2License***REMOVED***
+BASE_URL = "https://www.amazon.de"
+LICENSE_SERVER = "https://atv-ps-eu.amazon.de"
+#FILMINFO_RES = "AudioVideoUrls,CatalogMetadata,ForcedNarratives,SubtitlePresets,SubtitleUrls,TransitionTimecodes," \
+#               "TrickplayUrls,CuepointPlaylist,XRayMetadata,PlaybackSettings"
+FILMINFO_RES = "PlaybackUrls,CatalogMetadata,ForcedNarratives,SubtitlePresets,SubtitleUrls,TransitionTimecodes,TrickplayUrls,CuepointPlaylist,XRayMetadata,PlaybackSettings"
+WIDEVINE2LICENSE_RES = "Widevine2License"
 
 # extracted from request made by firefox
 deviceTypeID = 'AOAGZA014O5RE'
@@ -38,43 +38,43 @@ class AmazonMovieEntry(object):
         self.synopsisDict = synopsisDict
 
     def __repr__(self):
-        return ***REMOVED***[%s] asin=%s, title=%s, imgUrl=%s, synopsisText=%s, synopsisDict=%s***REMOVED*** % \
+        return "[%s] asin=%s, title=%s, imgUrl=%s, synopsisText=%s, synopsisDict=%s" % \
                (self.__class__.__name__, self.asin, self.title, self.imgUrl, self.synopsisText, self.synopsisDict)
 
 
 class Amazon(object):
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers[***REMOVED***Accept***REMOVED***] = constants.DEFAULT_ACCEPT_HEADER
-        self.session.headers[***REMOVED***Accept-Encoding***REMOVED***] = ***REMOVED***gzip, deflate***REMOVED***
-        self.session.headers[***REMOVED***Accept-Language***REMOVED***] = ***REMOVED***de,en-US;q=0.8,en;q=0.6***REMOVED***
-        self.session.headers[***REMOVED***Cache-Control***REMOVED***] = ***REMOVED***max-age=0***REMOVED***
-        self.session.headers[***REMOVED***Connection***REMOVED***] = ***REMOVED***keep-alive***REMOVED***
-        self.session.headers[***REMOVED***User-Agent***REMOVED***] = constants.USER_AGENT
-        #self.session.headers[***REMOVED***Host***REMOVED***] = BASE_URL.split('//')[1]
+        self.session.headers["Accept"] = constants.DEFAULT_ACCEPT_HEADER
+        self.session.headers["Accept-Encoding"] = "gzip, deflate"
+        self.session.headers["Accept-Language"] = "de,en-US;q=0.8,en;q=0.6"
+        self.session.headers["Cache-Control"] = "max-age=0"
+        self.session.headers["Connection"] = "keep-alive"
+        self.session.headers["User-Agent"] = constants.USER_AGENT
+        #self.session.headers["Host"] = BASE_URL.split('//')[1]
 
     def close(self):
         self.session.close()
 
     def logIn(self):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Login failed using mechanicalsoup and robobrowser.
         (for other mechanize alternatives see:
             https://stackoverflow.com/questions/2662705/are-there-any-alternatives-to-mechanize-in-python
         )
 
         So fall back to mechanize (however this only support Python 2.x)
-        ***REMOVED******REMOVED******REMOVED***
+        """
         cj = LWPCookieJar()
 
         if not os.path.isfile(constants.COOKIE_FILE):
-            email, pw = settingsManagerSingleton.getCredentialsForService(***REMOVED***amazon***REMOVED***)
-            python2 = subprocess.check_output([***REMOVED***which***REMOVED***, ***REMOVED***python2***REMOVED***])
-            python2 = python2.decode(***REMOVED***utf-8***REMOVED***).replace(***REMOVED***\n***REMOVED***, ***REMOVED******REMOVED***)
-            LOG.info(***REMOVED***Using python interpreter %s***REMOVED*** % python2)
-            ret = subprocess.call([python2, ***REMOVED***amazon-login.py***REMOVED***, email, pw])
+            email, pw = settingsManagerSingleton.getCredentialsForService("amazon")
+            python2 = subprocess.check_output(["which", "python2"])
+            python2 = python2.decode("utf-8").replace("\n", "")
+            LOG.info("Using python interpreter %s" % python2)
+            ret = subprocess.call([python2, "amazon-login.py", email, pw])
             if ret != 0:
-                raise ApplicationException(***REMOVED***Login failed.***REMOVED***)
+                raise ApplicationException("Login failed.")
 
         cj.load(constants.COOKIE_FILE, ignore_discard=True, ignore_expires=True)
         # pass LWPCookieJar directly to requests
@@ -84,9 +84,9 @@ class Amazon(object):
     def getMpdDataAndExtractInfos(self, url):
         response = self.session.get(url)
         if response.status_code != 200:
-            raise ApplicationException(***REMOVED***200 OK expected but got %d***REMOVED*** % response.status_code)
+            raise ApplicationException("200 OK expected but got %d" % response.status_code)
         mpdData = response.text
-        soup = BeautifulSoup(mpdData, ***REMOVED***xml***REMOVED***)
+        soup = BeautifulSoup(mpdData, "xml")
 
         #
         # NOTE code taken from 'old' version
@@ -94,55 +94,55 @@ class Amazon(object):
         #
         # get 'base url'
         parsedUrl = urlparse(url)
-        baseUrl = ***REMOVED******REMOVED***.join([parsedUrl.scheme, ***REMOVED***://***REMOVED***, parsedUrl.netloc, os.path.dirname(parsedUrl.path)])
+        baseUrl = "".join([parsedUrl.scheme, "://", parsedUrl.netloc, os.path.dirname(parsedUrl.path)])
 
         mpd_ = mpd.Mpd()
         adaptionSets = soup.find_all('AdaptationSet')
         for aSet in adaptionSets:
             adaptionSet = mpd.AdaptionSet()
-            adaptionSet.contentType = aSet[***REMOVED***contentType***REMOVED***]
-            adaptionSet.mimeType = aSet[***REMOVED***mimeType***REMOVED***]
-            if adaptionSet.contentType == ***REMOVED***video***REMOVED***:
-                adaptionSet.format = aSet[***REMOVED***par***REMOVED***]
-            elif adaptionSet.contentType == ***REMOVED***audio***REMOVED***:
-                adaptionSet.lang = aSet[***REMOVED***lang***REMOVED***]
+            adaptionSet.contentType = aSet["contentType"]
+            adaptionSet.mimeType = aSet["mimeType"]
+            if adaptionSet.contentType == "video":
+                adaptionSet.format = aSet["par"]
+            elif adaptionSet.contentType == "audio":
+                adaptionSet.lang = aSet["lang"]
 
             widevineProt = aSet.find('ContentProtection',
                                      attrs={'schemeIdUri': 'urn:uuid:EDEF8BA9-79D6-4ACE-A3C8-27DCD51D21ED'})
             if widevineProt:
                 adaptionSet.widevineContentProtection = wvP = mpd.ContentProtection()
-                wvP.schemeIdUri = widevineProt[***REMOVED***schemeIdUri***REMOVED***]
+                wvP.schemeIdUri = widevineProt["schemeIdUri"]
                 wvP.cencPsshData = widevineProt.contents[0].renderContents().strip()
 
             playReadyProt = aSet.find('ContentProtection',
                                       attrs={'schemeIdUri': 'urn:uuid:9A04F079-9840-4286-AB92-E65BE0885F95'})
             if playReadyProt:
                 adaptionSet.playReadyContentProtection = prP = mpd.ContentProtection()
-                prP.schemeIdUri = playReadyProt[***REMOVED***schemeIdUri***REMOVED***]
+                prP.schemeIdUri = playReadyProt["schemeIdUri"]
                 prP.cencPsshData = playReadyProt.contents[0].renderContents().strip()
 
             representations = aSet.find_all('Representation')
             for rep in representations:
-                if rep.has_attr(***REMOVED***width***REMOVED***):
+                if rep.has_attr("width"):
                     representation = mpd.VideoRepresentation()
-                    representation.width = rep[***REMOVED***width***REMOVED***]
-                    representation.height = rep[***REMOVED***height***REMOVED***]
-                    representation.codecPrivateData = bytes.fromhex(rep[***REMOVED***codecPrivateData***REMOVED***])
-                elif rep.has_attr(***REMOVED***audioSamplingRate***REMOVED***):
+                    representation.width = rep["width"]
+                    representation.height = rep["height"]
+                    representation.codecPrivateData = bytes.fromhex(rep["codecPrivateData"])
+                elif rep.has_attr("audioSamplingRate"):
                     representation = mpd.AudioRepresentation()
-                    representation.samplingRate = rep[***REMOVED***audioSamplingRate***REMOVED***]
-                    representation.bandwidth = rep[***REMOVED***bandwidth***REMOVED***]
+                    representation.samplingRate = rep["audioSamplingRate"]
+                    representation.bandwidth = rep["bandwidth"]
                 else:
-                    print(***REMOVED***Warning: Unknown Representation element found: {0}***REMOVED***.format(rep))
+                    print("Warning: Unknown Representation element found: {0}".format(rep))
                     representation = mpd.Representation()
 
-                representation.mediaFileUrl = ***REMOVED***{0}/{1}***REMOVED***.format(baseUrl,
-                                                               rep.BaseURL.renderContents().strip().decode(***REMOVED***utf-8***REMOVED***))
+                representation.mediaFileUrl = "{0}/{1}".format(baseUrl,
+                                                               rep.BaseURL.renderContents().strip().decode("utf-8"))
                 segmentList = rep.SegmentList
                 segLst = mpd.SegmentList()
-                segLst.duration = segmentList[***REMOVED***duration***REMOVED***]
-                segLst.timescale = segmentList[***REMOVED***timescale***REMOVED***]
-                segLst.initRange = segmentList.Initialization[***REMOVED***range***REMOVED***]
+                segLst.duration = segmentList["duration"]
+                segLst.timescale = segmentList["timescale"]
+                segLst.initRange = segmentList.Initialization["range"]
                 for i in range(1, len(segmentList.contents)):
                     segLst.addMediaRange(segmentList.contents[i]['mediaRange'])
                 representation.segmentList = segLst
@@ -153,91 +153,91 @@ class Amazon(object):
         return mpd_
 
     def getWidevine2License(self, asin, widevine2Challenge):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Request a Widevine License from the Amazon License server
 
         :param asin: Id of requested content
         :param widevine2Challenge: Widevine Challenge got from CDM already base64 encoded
         :return: License response from server
-        ***REMOVED******REMOVED******REMOVED***
+        """
         params = self._getUrlParams()
-        params[***REMOVED***asin***REMOVED***] = asin
-        params[***REMOVED***desiredResources***REMOVED***] = WIDEVINE2LICENSE_RES
-        params[***REMOVED***resourceUsage***REMOVED***] = ***REMOVED***ImmediateConsumption***REMOVED***
-        params[***REMOVED***deviceDrmOverride***REMOVED***] = ***REMOVED***CENC***REMOVED***
-        params[***REMOVED***deviceStreamingTechnologyOverride***REMOVED***] = ***REMOVED***DASH***REMOVED***
+        params["asin"] = asin
+        params["desiredResources"] = WIDEVINE2LICENSE_RES
+        params["resourceUsage"] = "ImmediateConsumption"
+        params["deviceDrmOverride"] = "CENC"
+        params["deviceStreamingTechnologyOverride"] = "DASH"
 
         postData = {
-            ***REMOVED***widevine2Challenge***REMOVED***: widevine2Challenge,
-            ***REMOVED***includeHdcpTestKeyInLicense***REMOVED***: True
+            "widevine2Challenge": widevine2Challenge,
+            "includeHdcpTestKeyInLicense": True
         }
 
-        url = LICENSE_SERVER + ***REMOVED***/cdp/catalog/GetPlaybackResources***REMOVED***
+        url = LICENSE_SERVER + "/cdp/catalog/GetPlaybackResources"
         r = self.session.post(url, params=params, data=postData)
 
-        # LOG.info(***REMOVED***status: %s***REMOVED*** % r.status_code)
-        # LOG.info(***REMOVED***json: %s***REMOVED*** % r.json())
+        # LOG.info("status: %s" % r.status_code)
+        # LOG.info("json: %s" % r.json())
         return r.json()
 
     def getFilmInfo(self, asin):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Get infos about a film with given asin
 
         :param asin: Id of requested content
         :return:
-        ***REMOVED******REMOVED******REMOVED***
+        """
         params = self._getUrlParams()
-        params[***REMOVED***asin***REMOVED***] = asin
-        params[***REMOVED***desiredResources***REMOVED***] = FILMINFO_RES
-        params[***REMOVED***resourceUsage***REMOVED***] = ***REMOVED***CacheResources***REMOVED***
-        params[***REMOVED***deviceDrmOverride***REMOVED***] = ***REMOVED***CENC***REMOVED***
-        params[***REMOVED***deviceStreamingTechnologyOverride***REMOVED***] = ***REMOVED***DASH***REMOVED***
-        params[***REMOVED***deviceProtocolOverride***REMOVED***] = ***REMOVED***Https***REMOVED***
-        params[***REMOVED***supportedDRMKeyScheme***REMOVED***] = ***REMOVED***DUAL_KEY***REMOVED***
-        params[***REMOVED***deviceBitrateAdaptationsOverride***REMOVED***] = ***REMOVED***CVBR,CBR***REMOVED***
-        params[***REMOVED***titleDecorationScheme***REMOVED***] = ***REMOVED***primary-content***REMOVED***
-        params[***REMOVED***subtitleFormat***REMOVED***] = ***REMOVED***TTMLv2***REMOVED***
-        params[***REMOVED***languageFeature***REMOVED***] = ***REMOVED***MLFv2***REMOVED***
-        params[***REMOVED***xrayDeviceClass***REMOVED***] = ***REMOVED***normal***REMOVED***
-        params[***REMOVED***xrayPlaybackMode***REMOVED***] = ***REMOVED***playback***REMOVED***
-        params[***REMOVED***xrayToken***REMOVED***] = ***REMOVED***INCEPTION_LITE_FILMO_V2***REMOVED***
-        params[***REMOVED***playbackSettingsFormatVersion***REMOVED***] = ***REMOVED***1.0.0***REMOVED***
+        params["asin"] = asin
+        params["desiredResources"] = FILMINFO_RES
+        params["resourceUsage"] = "CacheResources"
+        params["deviceDrmOverride"] = "CENC"
+        params["deviceStreamingTechnologyOverride"] = "DASH"
+        params["deviceProtocolOverride"] = "Https"
+        params["supportedDRMKeyScheme"] = "DUAL_KEY"
+        params["deviceBitrateAdaptationsOverride"] = "CVBR,CBR"
+        params["titleDecorationScheme"] = "primary-content"
+        params["subtitleFormat"] = "TTMLv2"
+        params["languageFeature"] = "MLFv2"
+        params["xrayDeviceClass"] = "normal"
+        params["xrayPlaybackMode"] = "playback"
+        params["xrayToken"] = "INCEPTION_LITE_FILMO_V2"
+        params["playbackSettingsFormatVersion"] = "1.0.0"
 
         # spoof this here; pretend to be Windows ;)
-        params[***REMOVED***operatingSystemName***REMOVED***] = ***REMOVED***Windows***REMOVED***
-        params[***REMOVED***operatingSystemVersion***REMOVED***] = ***REMOVED***10.0***REMOVED***
+        params["operatingSystemName"] = "Windows"
+        params["operatingSystemVersion"] = "10.0"
 
-        url = LICENSE_SERVER + ***REMOVED***/cdp/catalog/GetPlaybackResources***REMOVED***
+        url = LICENSE_SERVER + "/cdp/catalog/GetPlaybackResources"
         r = self.session.post(url, params=params)
 
-        # LOG.info(***REMOVED***status: %s***REMOVED*** % r.status_code)
-        # LOG.info(***REMOVED***json: %s***REMOVED*** % r.json())
+        # LOG.info("status: %s" % r.status_code)
+        # LOG.info("json: %s" % r.json())
         data = r.json()
 
         # NOTE enable if debug required
-        #LOG.info(***REMOVED******REMOVED***)
-        #LOG.info(***REMOVED***Film info for film %s: ***REMOVED*** % asin)
+        #LOG.info("")
+        #LOG.info("Film info for film %s: " % asin)
         #LOG.info(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
-        #LOG.info(***REMOVED******REMOVED***)
+        #LOG.info("")
 
         # parse interesting parts
         # - title, mpd url, video quality == HD (important!)
-        title = data[***REMOVED***catalogMetadata***REMOVED***][***REMOVED***catalog***REMOVED***][***REMOVED***title***REMOVED***]
-        urlSets = data[***REMOVED***playbackUrls***REMOVED***][***REMOVED***urlSets***REMOVED***]
+        title = data["catalogMetadata"]["catalog"]["title"]
+        urlSets = data["playbackUrls"]["urlSets"]
         result = {}
         for key,val in urlSets.items():
-            manifest = val[***REMOVED***urls***REMOVED***][***REMOVED***manifest***REMOVED***]
-            videoQuality = manifest[***REMOVED***videoQuality***REMOVED***]
-            result[***REMOVED***videoQuality***REMOVED***] = videoQuality
-            result[***REMOVED***title***REMOVED***] = title
-            result[***REMOVED***mpdUrl***REMOVED***] = manifest[***REMOVED***url***REMOVED***]
-            if videoQuality == ***REMOVED***HD***REMOVED***:
+            manifest = val["urls"]["manifest"]
+            videoQuality = manifest["videoQuality"]
+            result["videoQuality"] = videoQuality
+            result["title"] = title
+            result["mpdUrl"] = manifest["url"]
+            if videoQuality == "HD":
                 # choose first hd video quality
                 break
         return result
 
     def getVideoPageDetailsMapping(self, pageUrl):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Given some Amazon Movie/Series page url it collects
             * all episodes of some season of a series
             * for a movie only a single entry is returned
@@ -245,32 +245,32 @@ class Amazon(object):
         :return:
         Result is a map from the title to an AmazonMovieEntry object.
         For a movie this map only contains a single entry.
-        ***REMOVED******REMOVED******REMOVED***
+        """
         r = self.session.get(pageUrl)
-        # LOG.info(***REMOVED***status: %s***REMOVED*** % r.status_code)
+        # LOG.info("status: %s" % r.status_code)
 
         content = r.text
 
-        soup = BeautifulSoup(content, ***REMOVED***html.parser***REMOVED***)
-        #print(soup.find_all(***REMOVED***div***REMOVED***))
-        listEntries = soup.find_all(***REMOVED***div***REMOVED***, class_=***REMOVED***dv-episode-container***REMOVED***)
+        soup = BeautifulSoup(content, "html.parser")
+        #print(soup.find_all("div"))
+        listEntries = soup.find_all("div", class_="dv-episode-container")
         print(listEntries)
         titleAmazonMovieEntryMap = {}
         for entry in listEntries:
             LOG.debug(entry)
-            asin = entry[***REMOVED***data-aliases***REMOVED***]
+            asin = entry["data-aliases"]
             # if not asin:
-            #    asin = entry.find(***REMOVED***div***REMOVED***, class_=***REMOVED***dv-play-button-radial***REMOVED***).span.a[***REMOVED***data-asin***REMOVED***]
-            # LOG.debug(***REMOVED***asin=%s***REMOVED*** % asin)
+            #    asin = entry.find("div", class_="dv-play-button-radial").span.a["data-asin"]
+            # LOG.debug("asin=%s" % asin)
 
-            tmpLst = list(entry.find(***REMOVED***div***REMOVED***, class_=***REMOVED***dv-el-title***REMOVED***).children)
+            tmpLst = list(entry.find("div", class_="dv-el-title").children)
             title = tmpLst[len(tmpLst) - 1].strip()
-            imgUrl = entry.find(***REMOVED***div***REMOVED***, class_=***REMOVED***dv-el-packshot-image***REMOVED***)[***REMOVED***style***REMOVED***].replace(***REMOVED***background-image: url(***REMOVED***, ***REMOVED******REMOVED***) \
-                .replace(***REMOVED***);***REMOVED***, ***REMOVED******REMOVED***)
-            synopsisDiv = entry.find(***REMOVED***div***REMOVED***, class_=***REMOVED***dv-el-synopsis-content***REMOVED***)
-            synopsisText = list(synopsisDiv.find(***REMOVED***p***REMOVED***).children)[0]
-            synopsisKeys = synopsisDiv.find_all(***REMOVED***span***REMOVED***, class_=***REMOVED***dv-el-attr-key***REMOVED***)
-            synopsisValues = synopsisDiv.find_all(***REMOVED***span***REMOVED***, class_=***REMOVED***dv-el-attr-value***REMOVED***)
+            imgUrl = entry.find("div", class_="dv-el-packshot-image")["style"].replace("background-image: url(", "") \
+                .replace(");", "")
+            synopsisDiv = entry.find("div", class_="dv-el-synopsis-content")
+            synopsisText = list(synopsisDiv.find("p").children)[0]
+            synopsisKeys = synopsisDiv.find_all("span", class_="dv-el-attr-key")
+            synopsisValues = synopsisDiv.find_all("span", class_="dv-el-attr-value")
             synopsisDict = {}
             for keyDiv, valDiv in zip(synopsisKeys, synopsisValues):
                 key = keyDiv.string.strip()
@@ -279,64 +279,64 @@ class Amazon(object):
 
             azMovieEntry = AmazonMovieEntry(asin=asin, title=title, imgUrl=imgUrl, synopsisText=synopsisText,
                                             synopsisDict=synopsisDict)
-            # LOG.debug(***REMOVED******REMOVED***)
+            # LOG.debug("")
             titleAmazonMovieEntryMap[title] = azMovieEntry
 
         # try re fallback
-        dataAliases = re.findall('<div class=***REMOVED***dv-episode-container aok-clearfix***REMOVED*** .* data-aliases=***REMOVED***(.*)***REMOVED***>', content)
+        dataAliases = re.findall('<div class="dv-episode-container aok-clearfix" .* data-aliases="(.*)">', content)
         if dataAliases != None:
-            titles = re.findall('<div class=***REMOVED***dv-el-title***REMOVED***> <!-- Title -->([^<>]*)</div> <!-- End Title-->', content)
+            titles = re.findall('<div class="dv-el-title"> <!-- Title -->([^<>]*)</div> <!-- End Title-->', content)
             titles = [elem.strip() for elem in titles][:len(dataAliases)]
             #print(len(dataAliases))
             #print(len(titles))
             # not working
-            #synopsis = re.findall('<div class=***REMOVED***dv-el-synopsis-wrapper***REMOVED***> <!-- Synopsis -->.*<div class=***REMOVED***dv-el-synopsis-content***REMOVED***>.*<p class=***REMOVED***a-color-base a-text-normal***REMOVED***>(.*)</p>.*</div> <!-- End Synopsis -->', content, flags=re.DOTALL)
+            #synopsis = re.findall('<div class="dv-el-synopsis-wrapper"> <!-- Synopsis -->.*<div class="dv-el-synopsis-content">.*<p class="a-color-base a-text-normal">(.*)</p>.*</div> <!-- End Synopsis -->', content, flags=re.DOTALL)
             #print(synopsis)
             #print(len(synopsis))
             for i in range(0, len(dataAliases)):
                 azMovieEntry = AmazonMovieEntry(asin=dataAliases[i], title=titles[i],
-                    imgUrl=***REMOVED******REMOVED***, synopsisText=***REMOVED******REMOVED***, synopsisDict={})
+                    imgUrl="", synopsisText="", synopsisDict={})
                 titleAmazonMovieEntryMap[titles[i]] = azMovieEntry
 
         if titleAmazonMovieEntryMap == {}:
             # if map is empty we have a movie which must be specially parsed
-            synopsis = soup.find(***REMOVED***div***REMOVED***, class_=***REMOVED***dv-simple-synopsis***REMOVED***)
+            synopsis = soup.find("div", class_="dv-simple-synopsis")
             if synopsis:
                 strLst = [str(elem) for elem in synopsis.contents]
-                synopsisText = ***REMOVED******REMOVED***.join(strLst).replace(***REMOVED***<p>***REMOVED***, ***REMOVED******REMOVED***).replace(***REMOVED***</p>***REMOVED***, ***REMOVED******REMOVED***).strip()
+                synopsisText = "".join(strLst).replace("<p>", "").replace("</p>", "").strip()
                 # LOG.debug(synopsisText)
 
-                metaInfo = soup.find(***REMOVED***dl***REMOVED***, class_=***REMOVED***dv-meta-info***REMOVED***)
-                keys = metaInfo.find_all(***REMOVED***dt***REMOVED***)
-                vals = metaInfo.find_all(***REMOVED***dd***REMOVED***)
+                metaInfo = soup.find("dl", class_="dv-meta-info")
+                keys = metaInfo.find_all("dt")
+                vals = metaInfo.find_all("dd")
                 synopsisDict = {}
                 for keyElem, valElem in zip(keys, vals):
                     key = keyElem.string.strip()
                     val = valElem.string.strip()
                     synopsisDict[key] = val
 
-                watchListToggleForm = soup.find(***REMOVED***form***REMOVED***, class_=***REMOVED***dv-watchlist-toggle***REMOVED***)
+                watchListToggleForm = soup.find("form", class_="dv-watchlist-toggle")
                 # LOG.debug(watchListToggleForm)
                 # XXX this throws an exception
-                # hiddenAsinInput = watchListToggleForm.find(***REMOVED***input***REMOVED***, name=***REMOVED***ASIN***REMOVED***)
-                # asin = hiddenAsinInput[***REMOVED***value***REMOVED***]
-                inputs = watchListToggleForm.find_all(***REMOVED***input***REMOVED***)
+                # hiddenAsinInput = watchListToggleForm.find("input", name="ASIN")
+                # asin = hiddenAsinInput["value"]
+                inputs = watchListToggleForm.find_all("input")
                 asin = None
                 for input_ in inputs:
                     # TODO find a better solution - querying just for the name did not work
                     #  --> use regex?
-                    if len(input_[***REMOVED***value***REMOVED***]) == 10:
-                        asin = input_[***REMOVED***value***REMOVED***]
+                    if len(input_["value"]) == 10:
+                        asin = input_["value"]
 
                 assert(asin is not None)
 
-                titleH1 = soup.find(***REMOVED***h1***REMOVED***, id=***REMOVED***aiv-content-title***REMOVED***)
-                # LOG.debug(***REMOVED***titleH1: %s***REMOVED*** % titleH1)
+                titleH1 = soup.find("h1", id="aiv-content-title")
+                # LOG.debug("titleH1: %s" % titleH1)
                 title = list(titleH1.contents)[0].strip()
 
-                iconContainerDic = soup.find(***REMOVED***div***REMOVED***, class_=***REMOVED***dp-meta-icon-container***REMOVED***)
+                iconContainerDic = soup.find("div", class_="dp-meta-icon-container")
                 img = iconContainerDic.img
-                imgUrl = img[***REMOVED***src***REMOVED***]
+                imgUrl = img["src"]
 
                 azMovieEntry = AmazonMovieEntry(asin=asin, title=title, imgUrl=imgUrl,
                                                 synopsisText=synopsisText, synopsisDict=synopsisDict)
@@ -345,67 +345,67 @@ class Amazon(object):
         return titleAmazonMovieEntryMap
 
     def queryWatchList(self):
-        ***REMOVED******REMOVED******REMOVED***
+        """
 
         :return:
-        ***REMOVED******REMOVED******REMOVED***
+        """
         # TODO
         pass
 
     def query(self, searchString):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Generic search interface.
 
         :param searchString:
         :return:
-        ***REMOVED******REMOVED******REMOVED***
+        """
         # TODO
         pass
 
     @staticmethod
     def gen_id():
-        return hmac.new(constants.USER_AGENT.encode(***REMOVED***utf-8***REMOVED***), uuid.uuid4().bytes, hashlib.sha224).hexdigest()
+        return hmac.new(constants.USER_AGENT.encode("utf-8"), uuid.uuid4().bytes, hashlib.sha224).hexdigest()
 
     def _getUrlParams(self):
         url = BASE_URL + '/gp/deal/ajax/getNotifierResources.html'
         showpage = self.session.get(url).json()
 
         if not showpage:
-            raise ApplicationException(***REMOVED***Error retrieving %s***REMOVED*** % url)
+            raise ApplicationException("Error retrieving %s" % url)
 
-        values = {***REMOVED***deviceTypeID***REMOVED***: deviceTypeID,
-                  ***REMOVED***videoMaterialType***REMOVED***: ***REMOVED***Feature***REMOVED***,
-                  ***REMOVED***consumptionType***REMOVED***: ***REMOVED***Streaming***REMOVED***,
-                  ***REMOVED***firmware***REMOVED***: 1,
-                  ***REMOVED***gascEnabled***REMOVED***: ***REMOVED***false***REMOVED***,
-                  ***REMOVED***operatingSystemName***REMOVED***: ***REMOVED***Linux***REMOVED***,
-                  ***REMOVED***deviceID***REMOVED***: self.gen_id(),
-                  ***REMOVED***userWatchSessionId***REMOVED***: str(uuid.uuid4())}
+        values = {"deviceTypeID": deviceTypeID,
+                  "videoMaterialType": "Feature",
+                  "consumptionType": "Streaming",
+                  "firmware": 1,
+                  "gascEnabled": "false",
+                  "operatingSystemName": "Linux",
+                  "deviceID": self.gen_id(),
+                  "userWatchSessionId": str(uuid.uuid4())}
 
         customerData = showpage['resourceData']['GBCustomerData']
         if 'customerId' not in customerData or 'marketplaceId' not in customerData:
-            LOG.debug(***REMOVED***GBCustomerData=%s***REMOVED*** % showpage['resourceData']['GBCustomerData'])
-            raise ApplicationException(***REMOVED***Error retrieving customerId/marketplaceId via url %s.***REMOVED*** % url)
-        if showpage['resourceData']['GBCustomerData'][***REMOVED***customerId***REMOVED***] == ***REMOVED******REMOVED***:
-            LOG.error(***REMOVED***customerData: %s***REMOVED*** % showpage['resourceData']['GBCustomerData'])
-            raise ApplicationException(***REMOVED***Login cookies seem to be invalid (empty customerId).***REMOVED***)
+            LOG.debug("GBCustomerData=%s" % showpage['resourceData']['GBCustomerData'])
+            raise ApplicationException("Error retrieving customerId/marketplaceId via url %s." % url)
+        if showpage['resourceData']['GBCustomerData']["customerId"] == "":
+            LOG.error("customerData: %s" % showpage['resourceData']['GBCustomerData'])
+            raise ApplicationException("Login cookies seem to be invalid (empty customerId).")
 
-        values[***REMOVED***customerID***REMOVED***] = showpage['resourceData']['GBCustomerData'][***REMOVED***customerId***REMOVED***]
-        values[***REMOVED***marketplaceID***REMOVED***] = showpage['resourceData']['GBCustomerData'][***REMOVED***marketplaceId***REMOVED***]
+        values["customerID"] = showpage['resourceData']['GBCustomerData']["customerId"]
+        values["marketplaceID"] = showpage['resourceData']['GBCustomerData']["marketplaceId"]
 
         rand = 'onWebToken_' + str(random.randint(0, 484))
-        url = BASE_URL + ***REMOVED***/gp/video/streaming/player-token.json?callback=***REMOVED*** + rand
+        url = BASE_URL + "/gp/video/streaming/player-token.json?callback=" + rand
         pltoken = self.session.get(url).text
-        # LOG.info(***REMOVED***pltoken: %s***REMOVED*** % pltoken)
+        # LOG.info("pltoken: %s" % pltoken)
         try:
-            values['token'] = re.compile('***REMOVED***([^***REMOVED***]*).****REMOVED***([^***REMOVED***]*)***REMOVED***').findall(pltoken)[0][1]
+            values['token'] = re.compile('"([^"]*).*"([^"]*)"').findall(pltoken)[0][1]
         except IndexError:
-            raise ApplicationException(***REMOVED***Error retrieving token via url %s.***REMOVED*** % url)
+            raise ApplicationException("Error retrieving token via url %s." % url)
 
         return values
 
 
-if __name__ == ***REMOVED***__main__***REMOVED***:
+if __name__ == "__main__":
     import logging_config
     logging_config.configureLogging()
 
@@ -413,17 +413,17 @@ if __name__ == ***REMOVED***__main__***REMOVED***:
         az = Amazon()
         az.logIn()
 
-        asin = ***REMOVED***B06XGPDKXT***REMOVED***
+        asin = "B06XGPDKXT"
         info = az.getFilmInfo(asin)
-        LOG.info(***REMOVED******REMOVED***)
-        LOG.info(***REMOVED***Film info for film %s: ***REMOVED*** % asin)
+        LOG.info("")
+        LOG.info("Film info for film %s: " % asin)
         LOG.info(json.dumps(info, sort_keys=True, indent=4, separators=(',', ': ')))
-        LOG.info(***REMOVED******REMOVED***)
+        LOG.info("")
 
-        LOG.info(***REMOVED***Printing some useful stuff:***REMOVED***)
-        LOG.info(***REMOVED***Title: %s***REMOVED*** % info[***REMOVED***catalogMetadata***REMOVED***][***REMOVED***catalog***REMOVED***][***REMOVED***title***REMOVED***])
-        LOG.info(***REMOVED***MPD url: %s***REMOVED*** % info['audioVideoUrls']['avCdnUrlSets'][0]['avUrlInfoList'][0]['url'])
-        LOG.info(***REMOVED***  Video Quality: %s***REMOVED*** % info['audioVideoUrls']['avCdnUrlSets'][0]['avUrlInfoList'][0]['videoQuality'])
+        LOG.info("Printing some useful stuff:")
+        LOG.info("Title: %s" % info["catalogMetadata"]["catalog"]["title"])
+        LOG.info("MPD url: %s" % info['audioVideoUrls']['avCdnUrlSets'][0]['avUrlInfoList'][0]['url'])
+        LOG.info("  Video Quality: %s" % info['audioVideoUrls']['avCdnUrlSets'][0]['avUrlInfoList'][0]['videoQuality'])
 
         az.close()
 
@@ -439,12 +439,12 @@ if __name__ == ***REMOVED***__main__***REMOVED***:
         az.logIn()
 
         # Amazon 'Burning Man' (Folge 6 - You Are Wanted)
-        MPD_URL = r***REMOVED***https://a430avoddashs3eu-a.akamaihd.net/d/2$lRrKoyFBKkMSscjrMhPbrBe4WTU~/ondemand/4c35/87c8/6d57/4a97-b002-420cd0c831ac/fda6fd6a-5d11-4f9f-810b-d60b7cc8a441_corrected.mpd***REMOVED***
-        asin = ***REMOVED***B06XGPDKXT***REMOVED***
+        MPD_URL = r"https://a430avoddashs3eu-a.akamaihd.net/d/2$lRrKoyFBKkMSscjrMhPbrBe4WTU~/ondemand/4c35/87c8/6d57/4a97-b002-420cd0c831ac/fda6fd6a-5d11-4f9f-810b-d60b7cc8a441_corrected.mpd"
+        asin = "B06XGPDKXT"
 
         mpd_ = az.getMpdDataAndExtractInfos(MPD_URL)
         cencInitData = buildWidevineInitDataString(mpd_)
-        LOG.debug(***REMOVED***cenc pssh initdata: %s***REMOVED*** % binascii.hexlify(cencInitData).upper())
+        LOG.debug("cenc pssh initdata: %s" % binascii.hexlify(cencInitData).upper())
 
         # widevineAdapter stuff
         widevineAdapter.Init()
@@ -455,27 +455,27 @@ if __name__ == ***REMOVED***__main__***REMOVED***:
 
         challenge = widevineAdapter.GetSessionMessage()
         if not challenge:
-            LOG.error(***REMOVED***Error retrieving challenge***REMOVED***)
+            LOG.error("Error retrieving challenge")
             raise ApplicationException()
-        LOG.info(***REMOVED***Got Widevine challenge (len: %d): %s***REMOVED*** %
+        LOG.info("Got Widevine challenge (len: %d): %s" %
                  (len(challenge), binascii.hexlify(challenge).upper()))
-        b64EncodedChallenge = base64.b64encode(challenge).decode(***REMOVED***utf-8***REMOVED***)
+        b64EncodedChallenge = base64.b64encode(challenge).decode("utf-8")
 
         # send license request to server
         serverResponse = az.getWidevine2License(asin, b64EncodedChallenge)
 
-        LOG.info(***REMOVED******REMOVED***)
-        LOG.info(***REMOVED***Server response: ***REMOVED***)
+        LOG.info("")
+        LOG.info("Server response: ")
         LOG.info(json.dumps(serverResponse, sort_keys=True, indent=4, separators=(',', ': ')))
-        LOG.info(***REMOVED******REMOVED***)
+        LOG.info("")
 
-        assert (***REMOVED***widevine2License***REMOVED*** in serverResponse)
-        assert (***REMOVED***license***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***])
-        assert (***REMOVED***metadata***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***])
-        assert (***REMOVED***keyMetadata***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***metadata***REMOVED***])
+        assert ("widevine2License" in serverResponse)
+        assert ("license" in serverResponse["widevine2License"])
+        assert ("metadata" in serverResponse["widevine2License"])
+        assert ("keyMetadata" in serverResponse["widevine2License"]["metadata"])
 
-        license_ = base64.b64decode(serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***license***REMOVED***])
-        LOG.info(***REMOVED***Received license (len: %d):\n %s***REMOVED*** % (
+        license_ = base64.b64decode(serverResponse["widevine2License"]["license"])
+        LOG.info("Received license (len: %d):\n %s" % (
             len(license_), binascii.hexlify(license_).upper()
         ))
 
@@ -487,18 +487,18 @@ if __name__ == ***REMOVED***__main__***REMOVED***:
         az.close()
 
     def getVideoPageDetailsMapping():
-        url = ***REMOVED***https://www.amazon.de/gp/video/detail/B077QM313L/ref=dv_web_wtls_list_pr_1***REMOVED***
+        url = "https://www.amazon.de/gp/video/detail/B077QM313L/ref=dv_web_wtls_list_pr_1"
         az = Amazon()
         az.logIn()
 
         LOG.info(az.getVideoPageDetailsMapping(url))
-        LOG.info(***REMOVED******REMOVED***)
+        LOG.info("")
 
-        # url = ***REMOVED***https://www.amazon.de/gp/video/detail/B00TFWOFNC/ref=dv_web_wtls_list_pr_2***REMOVED***
+        # url = "https://www.amazon.de/gp/video/detail/B00TFWOFNC/ref=dv_web_wtls_list_pr_2"
         # LOG.info(az.getAsinsFromVideoPage(url))
-        # LOG.info(***REMOVED******REMOVED***)
+        # LOG.info("")
 
-        url = ***REMOVED***https://www.amazon.de/gp/video/detail/B01MRCF2Y0/ref=dv_web_wtls_list_pr_2***REMOVED***
+        url = "https://www.amazon.de/gp/video/detail/B01MRCF2Y0/ref=dv_web_wtls_list_pr_2"
         LOG.info(az.getVideoPageDetailsMapping(url))
 
     # getVideoPageDetailsMapping()

@@ -20,22 +20,22 @@ class ContentProvider(object):
             self.provider = amazon.Amazon()
 
     def connect(self):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Connects to the provider (e.g. log in)
-        ***REMOVED******REMOVED******REMOVED***
+        """
         self.provider.logIn()
 
     def close(self):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Close the provider
-        ***REMOVED******REMOVED******REMOVED***
+        """
         self.provider.close()
         widevineAdapter.Close()
 
     def requestLicenseForEstablishedSession(self, resId, cencInitData):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Same as requestLicense, but does not call widevineAdapter.Init()
-        ***REMOVED******REMOVED******REMOVED***
+        """
         widevineAdapter.CreateSessionAndGenerateRequest(cencInitData)
 
         # wait for cdm to process request
@@ -43,22 +43,22 @@ class ContentProvider(object):
 
         challenge = widevineAdapter.GetSessionMessage()
         if not challenge:
-            LOG.error(***REMOVED***Error retrieving challenge for contentType %s***REMOVED*** % contentType)
+            LOG.error("Error retrieving challenge for contentType %s" % contentType)
             raise util.ApplicationException()
-        b64EncodedChallenge = base64.b64encode(challenge).decode(***REMOVED***utf-8***REMOVED***)
+        b64EncodedChallenge = base64.b64encode(challenge).decode("utf-8")
         serverResponse = self.provider.getWidevine2License(resId, b64EncodedChallenge)
 
-        # LOG.info(***REMOVED******REMOVED***)
-        # LOG.info(***REMOVED***Server response: ***REMOVED***)
+        # LOG.info("")
+        # LOG.info("Server response: ")
         # LOG.info(json.dumps(serverResponse, sort_keys=True, indent=4, separators=(',', ': ')))
-        # LOG.info(***REMOVED******REMOVED***)
+        # LOG.info("")
 
-        assert (***REMOVED***widevine2License***REMOVED*** in serverResponse)
-        assert (***REMOVED***license***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***])
-        assert (***REMOVED***metadata***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***])
-        assert (***REMOVED***keyMetadata***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***metadata***REMOVED***])
+        assert ("widevine2License" in serverResponse)
+        assert ("license" in serverResponse["widevine2License"])
+        assert ("metadata" in serverResponse["widevine2License"])
+        assert ("keyMetadata" in serverResponse["widevine2License"]["metadata"])
 
-        license_ = base64.b64decode(serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***license***REMOVED***])
+        license_ = base64.b64decode(serverResponse["widevine2License"]["license"])
         widevineAdapter.UpdateCurrentSession(license_)
 
         time.sleep(3)
@@ -66,7 +66,7 @@ class ContentProvider(object):
 
 
     def requestLicense(self, resId, mpdUrl, streamType, adaptionSet=0, mpdObject=None):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Requests a new License from the provider
 
         :param resId: The id of the resource where a license should be requested (e.g. asin for Amazon)
@@ -74,13 +74,13 @@ class ContentProvider(object):
         :param streamType: The stream type, one of constants.STREAM_TYPE_AUDIO or constants.STREAM_TYPE_VIDEO
         :param adaptionSet: Number of adaption set in list, 0 ist the first one
         :return: The parsed MPD object for further usage (e.g. selecting the stream, getting the media file locations)
-        ***REMOVED******REMOVED******REMOVED***
+        """
         if mpdObject:
             mpd_ = mpdObject
         else:
             mpd_ = self.provider.getMpdDataAndExtractInfos(mpdUrl)
         cencInitData = util.buildWidevineInitDataString(mpd_, streamType, adaptionSet)
-        # LOG.debug(***REMOVED***cenc pssh initdata: %s***REMOVED*** % binascii.hexlify(cencInitData).upper())
+        # LOG.debug("cenc pssh initdata: %s" % binascii.hexlify(cencInitData).upper())
 
         # widevineAdapter stuff
         widevineAdapter.Init()
@@ -91,36 +91,36 @@ class ContentProvider(object):
 
         challenge = widevineAdapter.GetSessionMessage(streamType)
         if not challenge:
-            LOG.error(***REMOVED***Error retrieving challenge***REMOVED***)
+            LOG.error("Error retrieving challenge")
             raise util.ApplicationException()
-        # LOG.info(***REMOVED***Got Widevine challenge (len: %d): %s***REMOVED*** %
+        # LOG.info("Got Widevine challenge (len: %d): %s" %
         #         (len(challenge), binascii.hexlify(challenge).upper()))
-        b64EncodedChallenge = base64.b64encode(challenge).decode(***REMOVED***utf-8***REMOVED***)
+        b64EncodedChallenge = base64.b64encode(challenge).decode("utf-8")
 
         # send license request to server
         serverResponse = self.provider.getWidevine2License(resId, b64EncodedChallenge)
 
-        # LOG.info(***REMOVED******REMOVED***)
-        # LOG.info(***REMOVED***Server response: ***REMOVED***)
+        # LOG.info("")
+        # LOG.info("Server response: ")
         # LOG.info(json.dumps(serverResponse, sort_keys=True, indent=4, separators=(',', ': ')))
-        # LOG.info(***REMOVED******REMOVED***)
+        # LOG.info("")
 
-        assert (***REMOVED***widevine2License***REMOVED*** in serverResponse)
-        assert (***REMOVED***license***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***])
-        assert (***REMOVED***metadata***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***])
-        assert (***REMOVED***keyMetadata***REMOVED*** in serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***metadata***REMOVED***])
+        assert ("widevine2License" in serverResponse)
+        assert ("license" in serverResponse["widevine2License"])
+        assert ("metadata" in serverResponse["widevine2License"])
+        assert ("keyMetadata" in serverResponse["widevine2License"]["metadata"])
 
-        license_ = base64.b64decode(serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***license***REMOVED***])
-        # LOG.info(***REMOVED***Received license (len: %d):\n %s***REMOVED*** % (
+        license_ = base64.b64decode(serverResponse["widevine2License"]["license"])
+        # LOG.info("Received license (len: %d):\n %s" % (
         #    len(license_), binascii.hexlify(license_).upper()
         # ))
 
         widevineAdapter.UpdateCurrentSession(license_, streamType)
 
-        if len(serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***metadata***REMOVED***][***REMOVED***keyMetadata***REMOVED***]) >= 1 \
+        if len(serverResponse["widevine2License"]["metadata"]["keyMetadata"]) >= 1 \
                 and \
-                        serverResponse[***REMOVED***widevine2License***REMOVED***][***REMOVED***metadata***REMOVED***][***REMOVED***keyMetadata***REMOVED***][0][***REMOVED***keyType***REMOVED***] \
-                        == ***REMOVED***SERVICE_CERTIFICATE***REMOVED***:
+                        serverResponse["widevine2License"]["metadata"]["keyMetadata"][0]["keyType"] \
+                        == "SERVICE_CERTIFICATE":
             # this indicates that a certificate must be downloaded as well
             # see https://storage.googleapis.com/wvdocs/Widevine_DRM_Proxy_Integration.pdf
             # section Pre-loading a service certificate
@@ -130,8 +130,8 @@ class ContentProvider(object):
             # BUT I don't know how to get this and firefox/chrome don't request this
             #     so handle this as an error, which should not happend when the cdm
             #     is initialized correctly
-            raise util.ApplicationException(***REMOVED***SERVICE_CERTIFICATE requested error. ***REMOVED***
-                                            ***REMOVED***We can't handle this.***REMOVED***)
+            raise util.ApplicationException("SERVICE_CERTIFICATE requested error. "
+                                            "We can't handle this.")
         assert (widevineAdapter.ValidKeyIdsSize(streamType) > 0)
 
         return mpd_

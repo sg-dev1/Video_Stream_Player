@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-#include ***REMOVED***renderer.h***REMOVED***
+#include "renderer.h"
 
 struct AUDIO_FRAME : public FRAME {
   uint32_t channels;

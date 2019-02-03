@@ -1,7 +1,7 @@
 #ifndef WVADAPTER_LOGGING_H_
 #define WVADAPTER_LOGGING_H_
 
-#include ***REMOVED***common.h***REMOVED***
+#include "common.h"
 
 #include <thread>
 #include <ostream>
@@ -56,22 +56,22 @@ namespace logging {
 
 #define PRINT_BYTE_ARRAY(name, arr, len)                                       \
   do {                                                                         \
-    printf(***REMOVED***[INFO](%s:%d:%s) %s (%d): [ ***REMOVED***, __FILE__, __LINE__, __func__, name, \
+    printf("[INFO](%s:%d:%s) %s (%d): [ ", __FILE__, __LINE__, __func__, name, \
            len);                                                               \
     for (size_t k__ = 0; k__ < len; k__++) {                                   \
-      printf(***REMOVED***%02x ***REMOVED***, (arr)[k__]);                                             \
+      printf("%02x ", (arr)[k__]);                                             \
     }                                                                          \
-    printf(***REMOVED***]\n***REMOVED***);                                                             \
+    printf("]\n");                                                             \
   } while (0);
 
 /*
 #define DEBUG_PRINT_ITERABLE(x)                                                \
   do {                                                                         \
-    std::cout << ***REMOVED***[DEBUG] (***REMOVED*** << __FILE__ << ***REMOVED***:***REMOVED*** << __LINE__ << ***REMOVED***:***REMOVED*** << __func__ \
-              << ***REMOVED***:thread-id-***REMOVED*** << std::this_thread::get_id() << ***REMOVED***) ***REMOVED*** << #x     \
-              << ***REMOVED***: ***REMOVED***;                                                         \
+    std::cout << "[DEBUG] (" << __FILE__ << ":" << __LINE__ << ":" << __func__ \
+              << ":thread-id-" << std::this_thread::get_id() << ") " << #x     \
+              << ": ";                                                         \
     for (auto const &value : x) {                                              \
-      std::cout << value << ***REMOVED***, ***REMOVED***;                                              \
+      std::cout << value << ", ";                                              \
     }                                                                          \
     std::cout << std::endl;                                                    \
   } while (0);
@@ -79,7 +79,7 @@ namespace logging {
 
 #define PRETTY_PRINT_BENTO4_FORMAT(msg, format)                                \
   do {                                                                         \
-    printf(***REMOVED***%s: %c%c%c%c\n***REMOVED***, msg, (char)((format >> 24) & 0xFF),               \
+    printf("%s: %c%c%c%c\n", msg, (char)((format >> 24) & 0xFF),               \
            (char)((format >> 16) & 0xFF), (char)((format >> 8) & 0xFF),        \
            (char)((format)&0xFF));                                             \
   } while (0);

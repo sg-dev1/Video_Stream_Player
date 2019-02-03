@@ -10,9 +10,9 @@ from constants import USER_AGENT, AMAZON_BASE_URL, COOKIE_FILE
 
 
 def LogIn(email, password):
-    logger = logging.getLogger(***REMOVED***mechanize***REMOVED***)
+    logger = logging.getLogger("mechanize")
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.addHandler(logging.FileHandler(***REMOVED***/tmp/log.txt***REMOVED***))
+    logger.addHandler(logging.FileHandler("/tmp/log.txt"))
     logger.setLevel(logging.DEBUG)
 
     cj = cookielib.LWPCookieJar()
@@ -28,10 +28,10 @@ def LogIn(email, password):
 #    browser.set_debug_responses(True)
 #    browser.set_debug_redirects(True)
 
-    browser.open(AMAZON_BASE_URL + ***REMOVED***/gp/aw/si.html***REMOVED***)
-    browser.select_form(name=***REMOVED***signIn***REMOVED***)
-    browser[***REMOVED***email***REMOVED***] = email
-    browser[***REMOVED***password***REMOVED***] = password
+    browser.open(AMAZON_BASE_URL + "/gp/aw/si.html")
+    browser.select_form(name="signIn")
+    browser["email"] = email
+    browser["password"] = password
     browser.addheaders = [('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
                      ('Accept-Encoding', 'gzip, deflate'),
                      ('Accept-Language', 'de,en-US;q=0.8,en;q=0.6'),
@@ -47,38 +47,38 @@ def LogIn(email, password):
     response = re.sub(r'(?i)(<!doctype \w+).*>', r'\1>', raw_response)
     soup = BeautifulSoup(response, 'html.parser')
 
-    error = soup.find(***REMOVED***div***REMOVED***, attrs={'id': 'message_error'})
+    error = soup.find("div", attrs={'id': 'message_error'})
     if error:
-        print(***REMOVED***Log in error: %s***REMOVED*** % error)
+        print("Log in error: %s" % error)
         sys.exit(1)
     warning = soup.find('div', attrs={'id': 'message_warning'})
     if warning:
-        print(***REMOVED***Warning: %s***REMOVED*** % warning)
+        print("Warning: %s" % warning)
         sys.exit(1)
     auth_error = soup.find('div', attrs={'class': 'a-alert-content'})
     if auth_error:
-        print(***REMOVED***Authentication error: %s***REMOVED*** % auth_error)
+        print("Authentication error: %s" % auth_error)
         sys.exit(1)
 
     if 'action=sign-out' in response:
-        print(***REMOVED***Log in successful***REMOVED***)
+        print("Log in successful")
 
-#        with open(***REMOVED***/tmp/out.html***REMOVED***, ***REMOVED***w***REMOVED***) as f:
+#        with open("/tmp/out.html", "w") as f:
 #            f.write(raw_response)
 
         # save cookie to file
         cj.save(COOKIE_FILE, ignore_discard=True, ignore_expires=True)
     else:
-        print(***REMOVED***response=\n%s***REMOVED*** % response)
+        print("response=\n%s" % response)
         sys.exit(1)
 
 
-if __name__ == ***REMOVED***__main__***REMOVED***:
-    parser = argparse.ArgumentParser(description=***REMOVED***Login to Amazon script.***REMOVED***)
-    parser.add_argument(***REMOVED***email***REMOVED***)
-    parser.add_argument(***REMOVED***password***REMOVED***)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Login to Amazon script.")
+    parser.add_argument("email")
+    parser.add_argument("password")
     args = parser.parse_args()
 
-    print(***REMOVED***Using %s and %s***REMOVED*** % (args.email, args.password))
+    print("Using %s and %s" % (args.email, args.password))
 
     LogIn(args.email, args.password)

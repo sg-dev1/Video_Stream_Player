@@ -2,14 +2,14 @@ import re
 import sys
 
 def pi_version():
-    ***REMOVED******REMOVED******REMOVED***Detect the version of the Raspberry Pi.  Returns either 1, 2 or
+    """Detect the version of the Raspberry Pi.  Returns either 1, 2 or
     None depending on if it's a Raspberry Pi 1 (model A, B, A+, B+),
     Raspberry Pi 2 (model B+), or not a Raspberry Pi.
     see https://github.com/adafruit/Adafruit_Python_GPIO/blob/master/Adafruit_GPIO/Platform.py#L81
 
     /sys/firmware/devicetree/base/model could be used as well
     - see https://raspberrypi.stackexchange.com/a/61071
-    ***REMOVED******REMOVED******REMOVED***
+    """
     # Check /proc/cpuinfo for the Hardware field value.
     # 2708 is pi 1
     # 2709 is pi 2
@@ -22,7 +22,7 @@ def pi_version():
                       flags=re.MULTILINE | re.IGNORECASE)
     if not match:
         # Couldn't find the hardware, assume it isn't a pi.
-        return ***REMOVED******REMOVED***
+        return ""
     if match.group(1) == 'BCM2708':
         # Pi 1
         return 1
@@ -34,7 +34,7 @@ def pi_version():
         return 3
     else:
         # Something else, not a pi.
-        return ***REMOVED******REMOVED***
+        return ""
 
-if __name__ == ***REMOVED***__main__***REMOVED***:
+if __name__ == "__main__":
     sys.stdout.write(str(pi_version()))

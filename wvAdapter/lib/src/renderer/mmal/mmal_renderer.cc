@@ -1,9 +1,9 @@
-#include ***REMOVED***mmal_renderer.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***constants.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "mmal_renderer.h"
+#include "assertion.h"
+#include "constants.h"
+#include "logging.h"
 
-extern ***REMOVED***C***REMOVED*** {
+extern "C" {
 static void control_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 static void input_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 }
@@ -17,8 +17,8 @@ bool MmalRenderer::Open(void *cfg) {
   //
   status = mmal_component_create(componentName_.c_str(), &renderer_);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to create MMAL component ***REMOVED***
-                << componentName_ << ***REMOVED*** with status (***REMOVED*** << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("Failed to create MMAL component "
+                << componentName_ << " with status (" << status << ") "
                 << mmal_status_to_string(status));
     return false;
   }
@@ -31,8 +31,8 @@ bool MmalRenderer::Open(void *cfg) {
 
   status = mmal_component_enable(renderer_);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to enable component ***REMOVED*** << renderer_->name << ***REMOVED*** (***REMOVED***
-                                              << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("Failed to enable component " << renderer_->name << " ("
+                                              << status << ") "
                                               << mmal_status_to_string(status));
     ret = false;
     goto out;
@@ -44,8 +44,8 @@ bool MmalRenderer::Open(void *cfg) {
   renderer_->control->userdata = nullptr;
   status = mmal_port_enable(renderer_->control, control_port_cb);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to enable control port ***REMOVED***
-                << renderer_->control->name << ***REMOVED***(***REMOVED*** << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("Failed to enable control port "
+                << renderer_->control->name << "(" << status << ") "
                 << mmal_status_to_string(status));
     ret = false;
     goto out;
@@ -68,8 +68,8 @@ bool MmalRenderer::Open(void *cfg) {
   inputPort_->userdata = (MMAL_PORT_USERDATA_T *)&waitHelper_;
   status = mmal_port_enable(inputPort_, input_port_cb);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to enable input port ***REMOVED***
-                << inputPort_->name << ***REMOVED*** (***REMOVED*** << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("Failed to enable input port "
+                << inputPort_->name << " (" << status << ") "
                 << mmal_status_to_string(status));
     ret = false;
     goto out;
@@ -81,15 +81,15 @@ bool MmalRenderer::Open(void *cfg) {
   pool_ = mmal_port_pool_create(inputPort_, inputPort_->buffer_num,
                                 inputPort_->buffer_size);
   if (!pool_) {
-    ERROR_PRINT(***REMOVED***Failed to create MMAL pool for ***REMOVED***
-                << inputPort_->buffer_num << ***REMOVED*** buffers of size ***REMOVED***
-                << inputPort_->buffer_size << ***REMOVED***.***REMOVED***);
+    ERROR_PRINT("Failed to create MMAL pool for "
+                << inputPort_->buffer_num << " buffers of size "
+                << inputPort_->buffer_size << ".");
     ret = false;
     goto out;
   }
-  INFO_PRINT(***REMOVED***Created pool with ***REMOVED*** << inputPort_->buffer_num
-                                  << ***REMOVED*** buffers of size ***REMOVED***
-                                  << inputPort_->buffer_size << ***REMOVED***.***REMOVED***);
+  INFO_PRINT("Created pool with " << inputPort_->buffer_num
+                                  << " buffers of size "
+                                  << inputPort_->buffer_size << ".");
 
 out:
   if (!ret) {
@@ -120,7 +120,7 @@ void MmalRenderer::Close() {
     mmal_component_release(renderer_);
   }
 
-  INFO_PRINT(***REMOVED***Closing renderer: ***REMOVED*** << componentName_);
+  INFO_PRINT("Closing renderer: " << componentName_);
 }
 
 bool MmalRenderer::Reconfigure(void *cfg) {
@@ -133,20 +133,20 @@ bool MmalRenderer::Reconfigure(void *cfg) {
 // helper functions
 //
 static void control_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
-  INFO_PRINT(***REMOVED***control_port_cb called for port 0x***REMOVED*** << std::hex <<  port << ***REMOVED*** and buffer 0x***REMOVED*** << buffer << std::dec);
+  INFO_PRINT("control_port_cb called for port 0x" << std::hex <<  port << " and buffer 0x" << buffer << std::dec);
 
   if (buffer && buffer->cmd == MMAL_EVENT_ERROR) {
     MMAL_STATUS_T status = *(MMAL_STATUS_T *)buffer->data;
-    ERROR_PRINT(***REMOVED***MMAL error: (***REMOVED*** << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("MMAL error: (" << status << ") "
                                 << mmal_status_to_string(status));
   }
 }
 
 static void input_port_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
-  DEBUG_PRINT(***REMOVED***input_port_cb called.***REMOVED***);
+  DEBUG_PRINT("input_port_cb called.");
   mmal_buffer_header_release(buffer);
   ConditionalWaitHelper *helper =
       reinterpret_cast<ConditionalWaitHelper *>(port->userdata);
   helper->Signal();
-  // INFO_PRINT(***REMOVED***input_port_cb done with waithelper ***REMOVED*** << helper);
+  // INFO_PRINT("input_port_cb done with waithelper " << helper);
 }

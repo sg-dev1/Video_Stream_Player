@@ -10,7 +10,7 @@
         https://wikileaks.org/sony/docs/05/docs/DECE/TWG/TechnicalWorkGroup_1.0.3%20Specs/TechnicalWorkGroup_Download/1.0.3_459/Specs-1.0.2-1.0.3r1-redline-Word/CFFMediaFormat-1.0.2-1.0.3-redline.txt
 
 - PSSH format:  HEADER; uuid (16 bytes); len-payload (4 bytes)
-        where HEADER: len-total (4 bytes); string ***REMOVED***pssh***REMOVED***; 4 0x0 bytes
+        where HEADER: len-total (4 bytes); string "pssh"; 4 0x0 bytes
 
 - Widevine ContentProtection element uuid EDEF8BA9-79D6-4ACE-A3C8-27DCD51D21ED
     (see http://dashif.org/identifiers/protection/)

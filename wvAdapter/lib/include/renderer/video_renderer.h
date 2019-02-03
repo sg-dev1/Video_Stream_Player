@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include ***REMOVED***renderer.h***REMOVED***
+#include "renderer.h"
 
 enum VIDEO_FORMAT_ENUM {
   kUnknownVideoFormat = 0, // Unknown format value. Used for error reporting.

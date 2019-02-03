@@ -1,8 +1,8 @@
-#include ***REMOVED***default_renderer.h***REMOVED***
-#include ***REMOVED***audio_renderer.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***util.h***REMOVED***
-#include ***REMOVED***video_renderer.h***REMOVED***
+#include "default_renderer.h"
+#include "audio_renderer.h"
+#include "logging.h"
+#include "util.h"
+#include "video_renderer.h"
 
 #include <chrono>
 
@@ -13,7 +13,7 @@ void DefaultRenderer::Close() {}
 bool DefaultRenderer::Reconfigure(void *cfg) { return true; }
 
 void DefaultRenderer::Render(FRAME *frame) {
-  DEBUG_PRINT(***REMOVED***DefaultRenderer::Render called***REMOVED***);
+  DEBUG_PRINT("DefaultRenderer::Render called");
   std::chrono::milliseconds ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           std::chrono::system_clock::now().time_since_epoch());
@@ -23,15 +23,15 @@ void DefaultRenderer::Render(FRAME *frame) {
   AUDIO_FRAME *audioFrame = dynamic_cast<AUDIO_FRAME *>(frame);
   VIDEO_FRAME *videoFrame = dynamic_cast<VIDEO_FRAME *>(frame);
   if (audioFrame) {
-    DEBUG_PRINT(***REMOVED***Saving new audio frame.***REMOVED***);
-    filename = std::to_string(ms.count()) + ***REMOVED***_***REMOVED*** +
-               GetAudioFrameString(*audioFrame) + ***REMOVED***.pcm***REMOVED***;
+    DEBUG_PRINT("Saving new audio frame.");
+    filename = std::to_string(ms.count()) + "_" +
+               GetAudioFrameString(*audioFrame) + ".pcm";
   } else if (videoFrame) {
-    DEBUG_PRINT(***REMOVED***Saving new video frame.***REMOVED***);
-    filename = std::to_string(ms.count()) + ***REMOVED***_***REMOVED*** +
-               GetVideoFrameString(*videoFrame) + ***REMOVED***.yuv***REMOVED***;
+    DEBUG_PRINT("Saving new video frame.");
+    filename = std::to_string(ms.count()) + "_" +
+               GetVideoFrameString(*videoFrame) + ".yuv";
   } else {
-    ERROR_PRINT(***REMOVED***FRAME of not supported type given.***REMOVED***);
+    ERROR_PRINT("FRAME of not supported type given.");
     return;
   }
 

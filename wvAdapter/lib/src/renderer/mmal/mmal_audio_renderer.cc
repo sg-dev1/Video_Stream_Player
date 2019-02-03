@@ -1,8 +1,8 @@
-#include ***REMOVED***mmal_audio_renderer.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***constants.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***thread_utils.h***REMOVED***
+#include "mmal_audio_renderer.h"
+#include "assertion.h"
+#include "constants.h"
+#include "logging.h"
+#include "thread_utils.h"
 
 #include <chrono>
 
@@ -15,9 +15,9 @@ bool MmalAudioRenderer::ComponentSetup(void *cfg) {
   // TODO make this configurable: 'local' for 3.5mm audio output, 'hdmi' for
   // HDMI --> entry in cfg
   MMAL_STATUS_T status = mmal_port_parameter_set_string(
-      renderer_->control, MMAL_PARAMETER_AUDIO_DESTINATION, ***REMOVED***hdmi***REMOVED***);
+      renderer_->control, MMAL_PARAMETER_AUDIO_DESTINATION, "hdmi");
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Could not set audio destination hdmi***REMOVED***);
+    ERROR_PRINT("Could not set audio destination hdmi");
     return false;
   }
 
@@ -48,8 +48,8 @@ bool MmalAudioRenderer::InputPortSetup(void *cfg) {
 
   MMAL_STATUS_T status = mmal_port_format_commit(inputPort_);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to commit format for input port ***REMOVED***
-                << inputPort_->name << ***REMOVED***(***REMOVED*** << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("Failed to commit format for input port "
+                << inputPort_->name << "(" << status << ") "
                 << mmal_status_to_string(status));
     return false;
   }
@@ -64,7 +64,7 @@ bool MmalAudioRenderer::InputPortSetup(void *cfg) {
   inputPort_->buffer_size = inputPort_->buffer_size_recommended > bufferSize
                                 ? inputPort_->buffer_size_recommended
                                 : bufferSize;
-  INFO_PRINT(***REMOVED***Using buffer size: ***REMOVED*** << inputPort_->buffer_size);
+  INFO_PRINT("Using buffer size: " << inputPort_->buffer_size);
 
   return true;
 }
@@ -74,24 +74,24 @@ void MmalAudioRenderer::Render(FRAME *frame) {
 
   AUDIO_FRAME *audioFrame = dynamic_cast<AUDIO_FRAME *>(frame);
   if (!audioFrame) {
-    ERROR_PRINT(***REMOVED***Given frame was no audio frame. Cannot render it.***REMOVED***);
+    ERROR_PRINT("Given frame was no audio frame. Cannot render it.");
     return;
   }
 
   // get a buffer header from MMAL_POOL_T queue
   MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(pool_->queue);
   if (buffer == nullptr) {
-    ERROR_PRINT(***REMOVED***Display() failed because mmal_queue_get returned null.***REMOVED***);
+    ERROR_PRINT("Display() failed because mmal_queue_get returned null.");
     return;
   }
 
   buffer->cmd = 0;
   if (buffer->data == nullptr) {
-    ERROR_PRINT(***REMOVED***Using own buffer not supported***REMOVED***);
+    ERROR_PRINT("Using own buffer not supported");
     return;
   }
 
-  // INFO_PRINT(***REMOVED***Copying buffer: ***REMOVED*** << GetAudioFrameString(*audioFrame));
+  // INFO_PRINT("Copying buffer: " << GetAudioFrameString(*audioFrame));
   ASSERT(buffer->alloc_size >= audioFrame->bufferSize);
   memcpy(buffer->data, audioFrame->buffer, audioFrame->bufferSize);
   buffer->length = audioFrame->bufferSize;
@@ -99,7 +99,7 @@ void MmalAudioRenderer::Render(FRAME *frame) {
 
   MMAL_STATUS_T status = mmal_port_send_buffer(inputPort_, buffer);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to send buffer to input port. Frame dropped.***REMOVED***);
+    ERROR_PRINT("Failed to send buffer to input port. Frame dropped.");
     return;
   }
 

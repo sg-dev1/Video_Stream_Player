@@ -1,7 +1,7 @@
-#include ***REMOVED***mmal_video_renderer.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***thread_utils.h***REMOVED***
+#include "mmal_video_renderer.h"
+#include "assertion.h"
+#include "logging.h"
+#include "thread_utils.h"
 
 #include <bcm_host.h>
 #include <chrono>
@@ -44,8 +44,8 @@ bool MmalVideoRenderer::ComponentSetup(void *cfg) {
   MMAL_STATUS_T status =
       mmal_port_parameter_set(inputPort_, &display_region.hdr);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to set display region (***REMOVED***
-                << status << ***REMOVED***) ***REMOVED*** << mmal_status_to_string(status));
+    ERROR_PRINT("Failed to set display region ("
+                << status << ") " << mmal_status_to_string(status));
     return false;
   }
 
@@ -60,7 +60,7 @@ bool MmalVideoRenderer::InputPortSetup(void *cfg) {
   } else if (videoCfg->encoding == VIDEO_FORMAT_ENUM::kYv12) {
     inputPort_->format->encoding = MMAL_ENCODING_YV12;
   } else {
-    ERROR_PRINT(***REMOVED***Invalid VideoFormat (VIDEO_FORMAT_ENUM::kUnknownVideoFormat)***REMOVED***);
+    ERROR_PRINT("Invalid VideoFormat (VIDEO_FORMAT_ENUM::kUnknownVideoFormat)");
     return false;
   }
   inputPort_->format->es->video.width = videoCfg->width;
@@ -80,12 +80,12 @@ bool MmalVideoRenderer::InputPortSetup(void *cfg) {
   n2 /= ggt;
   inputPort_->format->es->video.par.num = n1;
   inputPort_->format->es->video.par.den = n2;
-  INFO_PRINT(***REMOVED***SAR = ***REMOVED*** << n1 << ***REMOVED***:***REMOVED*** << n2);
+  INFO_PRINT("SAR = " << n1 << ":" << n2);
 
   MMAL_STATUS_T status = mmal_port_format_commit(inputPort_);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to commit format for input port ***REMOVED***
-                << inputPort_->name << ***REMOVED***(***REMOVED*** << status << ***REMOVED***) ***REMOVED***
+    ERROR_PRINT("Failed to commit format for input port "
+                << inputPort_->name << "(" << status << ") "
                 << mmal_status_to_string(status));
     return false;
   }
@@ -98,7 +98,7 @@ bool MmalVideoRenderer::InputPortSetup(void *cfg) {
   inputPort_->buffer_size = inputPort_->buffer_size_recommended > bufferSize
                                 ? inputPort_->buffer_size_recommended
                                 : bufferSize;
-  INFO_PRINT(***REMOVED***Using buffer size: ***REMOVED*** << inputPort_->buffer_size);
+  INFO_PRINT("Using buffer size: " << inputPort_->buffer_size);
 
   return true;
 }
@@ -107,25 +107,25 @@ void MmalVideoRenderer::Render(FRAME *frame) {
 
   VIDEO_FRAME *videoFrame = dynamic_cast<VIDEO_FRAME *>(frame);
   if (!videoFrame) {
-    ERROR_PRINT(***REMOVED***Given frame was not a video frame. Cannot render it.***REMOVED***);
+    ERROR_PRINT("Given frame was not a video frame. Cannot render it.");
     return;
   }
 
   // get a buffer header from MMAL_POOL_T queue
   MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(pool_->queue);
   if (buffer == nullptr) {
-    ERROR_PRINT(***REMOVED***Display() failed because mmal_queue_get returned null.***REMOVED***);
+    ERROR_PRINT("Display() failed because mmal_queue_get returned null.");
     return;
   }
 
   buffer->cmd = 0;
   if (buffer->data == nullptr) {
-    INFO_PRINT(***REMOVED***Using own buffer***REMOVED***);
+    INFO_PRINT("Using own buffer");
     buffer->data = videoFrame->buffer;
     buffer->alloc_size = videoFrame->bufferSize;
   } else {
-    // INFO_PRINT(***REMOVED***Copying buffer..alloc_size=***REMOVED*** << buffer->alloc_size
-    //                                         << ***REMOVED***, required_size=***REMOVED***
+    // INFO_PRINT("Copying buffer..alloc_size=" << buffer->alloc_size
+    //                                         << ", required_size="
     //                                         << videoFrame->bufferSize);
     // INFO_PRINT(GetVideoFrameString(*videoFrame));
     ASSERT(buffer->alloc_size >= videoFrame->bufferSize);
@@ -154,7 +154,7 @@ void MmalVideoRenderer::Render(FRAME *frame) {
         dst += videoFrame->width / 2;
       }
     } else {
-      ERROR_PRINT(***REMOVED***Yv12 format currently not supported***REMOVED***);
+      ERROR_PRINT("Yv12 format currently not supported");
       mmal_buffer_header_release(buffer);
       return;
     }
@@ -164,7 +164,7 @@ void MmalVideoRenderer::Render(FRAME *frame) {
 
   MMAL_STATUS_T status = mmal_port_send_buffer(inputPort_, buffer);
   if (status != MMAL_SUCCESS) {
-    ERROR_PRINT(***REMOVED***Failed to send buffer to input port. Frame dropped.***REMOVED***);
+    ERROR_PRINT("Failed to send buffer to input port. Frame dropped.");
     return;
   }
 
@@ -190,7 +190,7 @@ static inline uint32_t GGT(uint32_t n1, uint32_t n2) {
     val = rest;
     rest = prevVal % val;
   }
-  INFO_PRINT(***REMOVED***ggt(***REMOVED*** << n1 << ***REMOVED***,***REMOVED*** << n2 << ***REMOVED***)=***REMOVED*** << val);
+  INFO_PRINT("ggt(" << n1 << "," << n2 << ")=" << val);
   return val;
 }
 

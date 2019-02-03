@@ -14,7 +14,7 @@ modification, are permitted provided that the following conditions are met:
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ***REMOVED***AS IS***REMOVED*** AND
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
@@ -48,12 +48,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
-#include ***REMOVED***interface/vcos/vcos.h***REMOVED***
-#include ***REMOVED***interface/vcos/vcos_logging.h***REMOVED***
-#include ***REMOVED***interface/vmcs_host/vchost.h***REMOVED***
+#include "interface/vcos/vcos.h"
+#include "interface/vcos/vcos_logging.h"
+#include "interface/vmcs_host/vchost.h"
 
-#include ***REMOVED***IL/OMX_Broadcom.h***REMOVED***
-#include ***REMOVED***ilclient.h***REMOVED***
+#include "IL/OMX_Broadcom.h"
+#include "ilclient.h"
 
 #define VCOS_LOG_CATEGORY (&ilclient_log_category)
 
@@ -63,9 +63,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static VCOS_LOG_CAT_T ilclient_log_category;
 
-/***REMOVED**********************************
+/******************************************************************************
 Static data and types used only in this file.
-***REMOVED**********************************/
+******************************************************************************/
 
 struct _ILEVENT_T {
   OMX_EVENTTYPE eEvent;
@@ -112,8 +112,8 @@ struct _COMPONENT_T {
 };
 
 #define random_wait()
-static char *states[] = {***REMOVED***Invalid***REMOVED***,   ***REMOVED***Loaded***REMOVED***, ***REMOVED***Idle***REMOVED***,
-                         ***REMOVED***Executing***REMOVED***, ***REMOVED***Pause***REMOVED***,  ***REMOVED***WaitingForResources***REMOVED***};
+static char *states[] = {"Invalid",   "Loaded", "Idle",
+                         "Executing", "Pause",  "WaitingForResources"};
 
 typedef enum {
   ILCLIENT_ERROR_UNPOPULATED = 0x1,
@@ -121,9 +121,9 @@ typedef enum {
   ILCLIENT_ERROR_BADPARAMETER = 0x4
 } ILERROR_MASK_T;
 
-/***REMOVED**********************************
+/******************************************************************************
 Static functions.
-***REMOVED**********************************/
+******************************************************************************/
 
 static OMX_ERRORTYPE
 ilclient_empty_buffer_done(OMX_IN OMX_HANDLETYPE hComponent,
@@ -150,30 +150,30 @@ static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
 static void ilclient_lock_events(ILCLIENT_T *st);
 static void ilclient_unlock_events(ILCLIENT_T *st);
 
-/***REMOVED**********************************
+/******************************************************************************
 Global functions
-***REMOVED**********************************/
+******************************************************************************/
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_init
  *
  * Description: Creates ilclient pointer
  *
  * Returns: pointer to client structure
- ***REMOVED***************/
+ ***********************************************************/
 ILCLIENT_T *ilclient_init() {
-  ILCLIENT_T *st = vcos_malloc(sizeof(ILCLIENT_T), ***REMOVED***ilclient***REMOVED***);
+  ILCLIENT_T *st = vcos_malloc(sizeof(ILCLIENT_T), "ilclient");
   int i;
 
   if (!st)
     return NULL;
 
   vcos_log_set_level(VCOS_LOG_CATEGORY, VCOS_LOG_WARN);
-  vcos_log_register(***REMOVED***ilclient***REMOVED***, VCOS_LOG_CATEGORY);
+  vcos_log_register("ilclient", VCOS_LOG_CATEGORY);
 
   memset(st, 0, sizeof(ILCLIENT_T));
 
-  i = vcos_semaphore_create(&st->event_sema, ***REMOVED***il:event***REMOVED***, 1);
+  i = vcos_semaphore_create(&st->event_sema, "il:event", 1);
   vc_assert(i == VCOS_SUCCESS);
 
   ilclient_lock_events(st);
@@ -187,20 +187,20 @@ ILCLIENT_T *ilclient_init() {
   return st;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_destroy
  *
  * Description: frees client state
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_destroy(ILCLIENT_T *st) {
   vcos_semaphore_delete(&st->event_sema);
   vcos_free(st);
   vcos_log_unregister(VCOS_LOG_CATEGORY);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_set_port_settings_callback
  *
  * Description: sets the callback used when receiving port settings
@@ -208,7 +208,7 @@ void ilclient_destroy(ILCLIENT_T *st) {
  * the port index reporting the message.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_set_port_settings_callback(ILCLIENT_T *st,
                                          ILCLIENT_CALLBACK_T func,
                                          void *userdata) {
@@ -216,7 +216,7 @@ void ilclient_set_port_settings_callback(ILCLIENT_T *st,
   st->port_settings_callback_data = userdata;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_set_eos_callback
  *
  * Description: sets the callback used when receiving eos flags.  The
@@ -224,14 +224,14 @@ void ilclient_set_port_settings_callback(ILCLIENT_T *st,
  * reporting an eos flag.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_set_eos_callback(ILCLIENT_T *st, ILCLIENT_CALLBACK_T func,
                                void *userdata) {
   st->eos_callback = func;
   st->eos_callback_data = userdata;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_set_error_callback
  *
  * Description: sets the callback used when receiving error events.
@@ -239,21 +239,21 @@ void ilclient_set_eos_callback(ILCLIENT_T *st, ILCLIENT_CALLBACK_T func,
  * being reported.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_set_error_callback(ILCLIENT_T *st, ILCLIENT_CALLBACK_T func,
                                  void *userdata) {
   st->error_callback = func;
   st->error_callback_data = userdata;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_set_fill_buffer_done_callback
  *
  * Description: sets the callback used when receiving
  * fill_buffer_done event
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_set_fill_buffer_done_callback(ILCLIENT_T *st,
                                             ILCLIENT_BUFFER_CALLBACK_T func,
                                             void *userdata) {
@@ -261,14 +261,14 @@ void ilclient_set_fill_buffer_done_callback(ILCLIENT_T *st,
   st->fill_buffer_done_callback_data = userdata;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_set_empty_buffer_done_callback
  *
  * Description: sets the callback used when receiving
  * empty_buffer_done event
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_set_empty_buffer_done_callback(ILCLIENT_T *st,
                                              ILCLIENT_BUFFER_CALLBACK_T func,
                                              void *userdata) {
@@ -276,14 +276,14 @@ void ilclient_set_empty_buffer_done_callback(ILCLIENT_T *st,
   st->empty_buffer_done_callback_data = userdata;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_set_configchanged_callback
  *
  * Description: sets the callback used when a config changed
  * event is received
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_set_configchanged_callback(ILCLIENT_T *st,
                                          ILCLIENT_CALLBACK_T func,
                                          void *userdata) {
@@ -291,14 +291,14 @@ void ilclient_set_configchanged_callback(ILCLIENT_T *st,
   st->configchanged_callback_data = userdata;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_create_component
  *
  * Description: initialises a component state structure and creates
  * the IL component.
  *
  * Returns: 0 on success, -1 on failure
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_create_component(ILCLIENT_T *client, COMPONENT_T **comp,
                               char *name, ILCLIENT_CREATE_FLAGS_T flags) {
   OMX_CALLBACKTYPE callbacks;
@@ -306,24 +306,24 @@ int ilclient_create_component(ILCLIENT_T *client, COMPONENT_T **comp,
   char component_name[128];
   int32_t status;
 
-  *comp = vcos_malloc(sizeof(COMPONENT_T), ***REMOVED***il:comp***REMOVED***);
+  *comp = vcos_malloc(sizeof(COMPONENT_T), "il:comp");
   if (!*comp)
     return -1;
 
   memset(*comp, 0, sizeof(COMPONENT_T));
 
-#define COMP_PREFIX ***REMOVED***OMX.broadcom.***REMOVED***
+#define COMP_PREFIX "OMX.broadcom."
 
-  status = vcos_event_flags_create(&(*comp)->event, ***REMOVED***il:comp***REMOVED***);
+  status = vcos_event_flags_create(&(*comp)->event, "il:comp");
   vc_assert(status == VCOS_SUCCESS);
-  status = vcos_semaphore_create(&(*comp)->sema, ***REMOVED***il:comp***REMOVED***, 1);
+  status = vcos_semaphore_create(&(*comp)->sema, "il:comp", 1);
   vc_assert(status == VCOS_SUCCESS);
   (*comp)->client = client;
 
-  vcos_snprintf((*comp)->name, sizeof((*comp)->name), ***REMOVED***cl:%s***REMOVED***, name);
-  vcos_snprintf((*comp)->bufname, sizeof((*comp)->bufname), ***REMOVED***cl:%s buffer***REMOVED***,
+  vcos_snprintf((*comp)->name, sizeof((*comp)->name), "cl:%s", name);
+  vcos_snprintf((*comp)->bufname, sizeof((*comp)->bufname), "cl:%s buffer",
                 name);
-  vcos_snprintf(component_name, sizeof(component_name), ***REMOVED***%s%s***REMOVED***, COMP_PREFIX,
+  vcos_snprintf(component_name, sizeof(component_name), "%s%s", COMP_PREFIX,
                 name);
 
   (*comp)->flags = flags;
@@ -347,9 +347,9 @@ int ilclient_create_component(ILCLIENT_T *client, COMPONENT_T **comp,
                                 &uid) == OMX_ErrorNone) {
       char *p = (char *)uid + strlen(COMP_PREFIX);
 
-      vcos_snprintf((*comp)->name, sizeof((*comp)->name), ***REMOVED***cl:%s***REMOVED***, p);
+      vcos_snprintf((*comp)->name, sizeof((*comp)->name), "cl:%s", p);
       (*comp)->name[sizeof((*comp)->name) - 1] = 0;
-      vcos_snprintf((*comp)->bufname, sizeof((*comp)->bufname), ***REMOVED***cl:%s buffer***REMOVED***,
+      vcos_snprintf((*comp)->bufname, sizeof((*comp)->bufname), "cl:%s buffer",
                     p);
       (*comp)->bufname[sizeof((*comp)->bufname) - 1] = 0;
     }
@@ -401,7 +401,7 @@ int ilclient_create_component(ILCLIENT_T *client, COMPONENT_T **comp,
   }
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_remove_event
  *
  * Description: Removes an event from a component event list.  ignore1
@@ -410,7 +410,7 @@ int ilclient_create_component(ILCLIENT_T *client, COMPONENT_T **comp,
  *
  * Returns: 0 if the event was removed.  -1 if no matching event was
  * found.
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_remove_event(COMPONENT_T *st, OMX_EVENTTYPE eEvent, OMX_U32 nData1,
                           int ignore1, OMX_IN OMX_U32 nData2, int ignore2) {
   ILEVENT_T *cur, *prev;
@@ -456,7 +456,7 @@ int ilclient_remove_event(COMPONENT_T *st, OMX_EVENTTYPE eEvent, OMX_U32 nData1,
   return 0;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_state_transition
  *
  * Description: Transitions a null terminated list of IL components to
@@ -464,7 +464,7 @@ int ilclient_remove_event(COMPONENT_T *st, OMX_EVENTTYPE eEvent, OMX_U32 nData1,
  * order before any are checked for transition completion.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_state_transition(COMPONENT_T *list[], OMX_STATETYPE state) {
   OMX_ERRORTYPE error;
   int i, num;
@@ -514,13 +514,13 @@ void ilclient_state_transition(COMPONENT_T *list[], OMX_STATETYPE state) {
       list[i]->error_mask &= ~ILCLIENT_ERROR_UNPOPULATED;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_teardown_tunnels
  *
  * Description: tears down a null terminated list of tunnels.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_teardown_tunnels(TUNNEL_T *tunnel) {
   int i;
   OMX_ERRORTYPE error;
@@ -538,14 +538,14 @@ void ilclient_teardown_tunnels(TUNNEL_T *tunnel) {
   }
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_disable_tunnel
  *
  * Description: disables a tunnel by disabling the ports.  Allows
  * ports to signal same state error if they were already disabled.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_disable_tunnel(TUNNEL_T *tunnel) {
   OMX_ERRORTYPE error;
 
@@ -575,18 +575,18 @@ void ilclient_disable_tunnel(TUNNEL_T *tunnel) {
   tunnel->sink->error_mask &= ~ILCLIENT_ERROR_UNPOPULATED;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_enable_tunnel
  *
  * Description: enables a tunnel by enabling the ports
  *
  * Returns: 0 on success, -1 on failure
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_enable_tunnel(TUNNEL_T *tunnel) {
   OMX_STATETYPE state;
   OMX_ERRORTYPE error;
 
-  ilclient_debug_output(***REMOVED***ilclient: enable tunnel from %x/%d to %x/%d***REMOVED***,
+  ilclient_debug_output("ilclient: enable tunnel from %x/%d to %x/%d",
                         tunnel->source, tunnel->source_port, tunnel->sink,
                         tunnel->sink_port);
 
@@ -620,7 +620,7 @@ int ilclient_enable_tunnel(TUNNEL_T *tunnel) {
       }
 
       ilclient_debug_output(
-          ***REMOVED***ilclient: could not change component state to IDLE***REMOVED***);
+          "ilclient: could not change component state to IDLE");
       ilclient_disable_port(tunnel->source, tunnel->source_port);
       return -1;
     }
@@ -628,7 +628,7 @@ int ilclient_enable_tunnel(TUNNEL_T *tunnel) {
     if (ilclient_wait_for_command_complete(tunnel->sink, OMX_CommandPortEnable,
                                            tunnel->sink_port) != 0) {
       ilclient_debug_output(
-          ***REMOVED***ilclient: could not change sink port %d to enabled***REMOVED***,
+          "ilclient: could not change sink port %d to enabled",
           tunnel->sink_port);
 
       // Oops failed to enable the sink port
@@ -645,7 +645,7 @@ int ilclient_enable_tunnel(TUNNEL_T *tunnel) {
   if (ilclient_wait_for_command_complete(tunnel->source, OMX_CommandPortEnable,
                                          tunnel->source_port) != 0) {
     ilclient_debug_output(
-        ***REMOVED***ilclient: could not change source port %d to enabled***REMOVED***,
+        "ilclient: could not change source port %d to enabled",
         tunnel->source_port);
 
     // Failed to enable the source port
@@ -656,7 +656,7 @@ int ilclient_enable_tunnel(TUNNEL_T *tunnel) {
   return 0;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_flush_tunnels
  *
  * Description: flushes all ports used in a null terminated list of
@@ -664,7 +664,7 @@ int ilclient_enable_tunnel(TUNNEL_T *tunnel) {
  * the list, where max=0 means all tunnels.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_flush_tunnels(TUNNEL_T *tunnel, int max) {
   OMX_ERRORTYPE error;
   int i;
@@ -689,14 +689,14 @@ void ilclient_flush_tunnels(TUNNEL_T *tunnel, int max) {
   }
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_return_events
  *
  * Description: Returns all events from a component event list to the
  * list of unused event structures.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_return_events(COMPONENT_T *comp) {
   ilclient_lock_events(comp->client);
   while (comp->list) {
@@ -708,14 +708,14 @@ void ilclient_return_events(COMPONENT_T *comp) {
   ilclient_unlock_events(comp->client);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_cleanup_components
  *
  * Description: frees all components from a null terminated list and
  * deletes resources used in component state structure.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_cleanup_components(COMPONENT_T *list[]) {
   int i;
   OMX_ERRORTYPE error;
@@ -741,7 +741,7 @@ void ilclient_cleanup_components(COMPONENT_T *list[]) {
   }
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_change_component_state
  *
  * Description: changes the state of a single component.  Note: this
@@ -751,14 +751,14 @@ void ilclient_cleanup_components(COMPONENT_T *list[]) {
  * Returns: 0 on success, -1 on failure (note - trying to change to
  * the same state which causes a OMX_ErrorSameState is treated as
  * success)
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_change_component_state(COMPONENT_T *comp, OMX_STATETYPE state) {
   OMX_ERRORTYPE error;
   error = OMX_SendCommand(comp->comp, OMX_CommandStateSet, state, NULL);
   vc_assert(error == OMX_ErrorNone);
   if (ilclient_wait_for_command_complete(comp, OMX_CommandStateSet, state) <
       0) {
-    ilclient_debug_output(***REMOVED***ilclient: could not change component state to %d***REMOVED***,
+    ilclient_debug_output("ilclient: could not change component state to %d",
                           state);
     ilclient_remove_event(comp, OMX_EventError, 0, 1, 0, 1);
     return -1;
@@ -766,13 +766,13 @@ int ilclient_change_component_state(COMPONENT_T *comp, OMX_STATETYPE state) {
   return 0;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_disable_port
  *
  * Description: disables a port on a given component.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_disable_port(COMPONENT_T *comp, int portIndex) {
   OMX_ERRORTYPE error;
   error = OMX_SendCommand(comp->comp, OMX_CommandPortDisable, portIndex, NULL);
@@ -782,13 +782,13 @@ void ilclient_disable_port(COMPONENT_T *comp, int portIndex) {
     vc_assert(0);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_enabled_port
  *
  * Description: enables a port on a given component.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_enable_port(COMPONENT_T *comp, int portIndex) {
   OMX_ERRORTYPE error;
   error = OMX_SendCommand(comp->comp, OMX_CommandPortEnable, portIndex, NULL);
@@ -798,14 +798,14 @@ void ilclient_enable_port(COMPONENT_T *comp, int portIndex) {
     vc_assert(0);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_enable_port_buffers
  *
  * Description: enables a port on a given component which requires
  * buffers to be supplied by the client.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
                                  ILCLIENT_MALLOC_T ilclient_malloc,
                                  ILCLIENT_FREE_T ilclient_free, void *private) {
@@ -894,14 +894,14 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
   return 0;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_disable_port_buffers
  *
  * Description: disables a port on a given component which has
  * buffers supplied by the client.
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_disable_port_buffers(COMPONENT_T *comp, int portIndex,
                                    OMX_BUFFERHEADERTYPE *bufferList,
                                    ILCLIENT_FREE_T ilclient_free,
@@ -1004,7 +1004,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, int portIndex,
     vc_assert(0);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_setup_tunnel
  *
  * Description: creates a tunnel between components that require that
@@ -1020,7 +1020,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, int portIndex,
  * -3: no streams are available from this port
  * -4: requested stream is not available from this port
  * -5: the data format was not acceptable to the sink
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_setup_tunnel(TUNNEL_T *tunnel, unsigned int portStream,
                           int timeout) {
   OMX_ERRORTYPE error;
@@ -1044,7 +1044,7 @@ int ilclient_setup_tunnel(TUNNEL_T *tunnel, unsigned int portStream,
 
     if (status < 0) {
       ilclient_debug_output(
-          ***REMOVED***ilclient: timed out waiting for port settings changed on port %d***REMOVED***,
+          "ilclient: timed out waiting for port settings changed on port %d",
           tunnel->source_port);
       return status;
     }
@@ -1101,7 +1101,7 @@ int ilclient_setup_tunnel(TUNNEL_T *tunnel, unsigned int portStream,
     }
 
     ilclient_debug_output(
-        ***REMOVED***ilclient: could not setup/enable tunnel (setup=0x%x,enable=%d)***REMOVED***, error,
+        "ilclient: could not setup/enable tunnel (setup=0x%x,enable=%d)", error,
         enable_error);
     return -5;
   }
@@ -1109,7 +1109,7 @@ int ilclient_setup_tunnel(TUNNEL_T *tunnel, unsigned int portStream,
   return 0;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_wait_for_event
  *
  * Description: waits for a given event to appear on a component event
@@ -1120,7 +1120,7 @@ int ilclient_setup_tunnel(TUNNEL_T *tunnel, unsigned int portStream,
  * -1: a timeout was received.
  * -2: an error event was received.
  * -3: a config change event was received.
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_wait_for_event(COMPONENT_T *comp, OMX_EVENTTYPE event,
                             OMX_U32 nData1, int ignore1, OMX_IN OMX_U32 nData2,
                             int ignore2, int event_flag, int suspend) {
@@ -1181,7 +1181,7 @@ int ilclient_wait_for_event(COMPONENT_T *comp, OMX_EVENTTYPE event,
   return 0;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_wait_for_command_complete_dual
  *
  * Description: Waits for an event signalling command completion.  In
@@ -1189,7 +1189,7 @@ int ilclient_wait_for_event(COMPONENT_T *comp, OMX_EVENTTYPE event,
  * that has terminated a command on a second component.
  *
  * Returns: 0 on success, -1 on failure of comp, -2 on failure of other
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_wait_for_command_complete_dual(COMPONENT_T *comp,
                                             OMX_COMMANDTYPE command,
                                             OMX_U32 nData2,
@@ -1281,20 +1281,20 @@ int ilclient_wait_for_command_complete_dual(COMPONENT_T *comp,
   return ret;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_wait_for_command_complete
  *
  * Description: Waits for an event signalling command completion.
  *
  * Returns: 0 on success, -1 on failure.
- ***REMOVED***************/
+ ***********************************************************/
 int ilclient_wait_for_command_complete(COMPONENT_T *comp,
                                        OMX_COMMANDTYPE command,
                                        OMX_U32 nData2) {
   return ilclient_wait_for_command_complete_dual(comp, command, nData2, NULL);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_get_output_buffer
  *
  * Description: Returns an output buffer returned from a component
@@ -1302,7 +1302,7 @@ int ilclient_wait_for_command_complete(COMPONENT_T *comp,
  * given component and port index.
  *
  * Returns: pointer to buffer if available, otherwise NULL
- ***REMOVED***************/
+ ***********************************************************/
 OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp,
                                                  int portIndex, int block) {
   OMX_BUFFERHEADERTYPE *ret = NULL, *prev = NULL;
@@ -1335,7 +1335,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp,
   return ret;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_get_input_buffer
  *
  * Description: Returns an input buffer return from a component using
@@ -1343,7 +1343,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp,
  * component and port index.
  *
  * Returns: pointer to buffer if available, otherwise NULL
- ***REMOVED***************/
+ ***********************************************************/
 OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp,
                                                 int portIndex, int block) {
   OMX_BUFFERHEADERTYPE *ret = NULL, *prev = NULL;
@@ -1377,14 +1377,14 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp,
   return ret;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_debug_output
  *
  * Description: prints a varg message to the log or the debug screen
  * under win32
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 void ilclient_debug_output(char *format, ...) {
   va_list args;
 
@@ -1393,40 +1393,40 @@ void ilclient_debug_output(char *format, ...) {
   va_end(args);
 }
 
-/***REMOVED**********************************
+/******************************************************************************
 Static functions
-***REMOVED**********************************/
+******************************************************************************/
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_lock_events
  *
  * Description: locks the client event structure
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 static void ilclient_lock_events(ILCLIENT_T *st) {
   vcos_semaphore_wait(&st->event_sema);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_unlock_events
  *
  * Description: unlocks the client event structure
  *
  * Returns: void
- ***REMOVED***************/
+ ***********************************************************/
 static void ilclient_unlock_events(ILCLIENT_T *st) {
   vcos_semaphore_post(&st->event_sema);
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_event_handler
  *
  * Description: event handler passed to core to use as component
  * callback
  *
  * Returns: success
- ***REMOVED***************/
+ ***********************************************************/
 static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
                                             OMX_IN OMX_PTR pAppData,
                                             OMX_IN OMX_EVENTTYPE eEvent,
@@ -1451,7 +1451,7 @@ static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
           (*list)->nData2 == event->nData2) {
         // remove this duplicate
         ILEVENT_T *rem = *list;
-        ilclient_debug_output(***REMOVED***%s: removing %d/%d/%d***REMOVED***, st->name, event->eEvent,
+        ilclient_debug_output("%s: removing %d/%d/%d", st->name, event->eEvent,
                               event->nData1, event->nData2);
         *list = rem->next;
         rem->eEvent = -1;
@@ -1471,24 +1471,24 @@ static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
   case OMX_EventCmdComplete:
     switch (nData1) {
     case OMX_CommandStateSet:
-      ilclient_debug_output(***REMOVED***%s: callback state changed (%s)***REMOVED***, st->name,
+      ilclient_debug_output("%s: callback state changed (%s)", st->name,
                             states[nData2]);
       vcos_event_flags_set(&st->event, ILCLIENT_STATE_CHANGED, VCOS_OR);
       break;
     case OMX_CommandPortDisable:
-      ilclient_debug_output(***REMOVED***%s: callback port disable %d***REMOVED***, st->name, nData2);
+      ilclient_debug_output("%s: callback port disable %d", st->name, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_PORT_DISABLED, VCOS_OR);
       break;
     case OMX_CommandPortEnable:
-      ilclient_debug_output(***REMOVED***%s: callback port enable %d***REMOVED***, st->name, nData2);
+      ilclient_debug_output("%s: callback port enable %d", st->name, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_PORT_ENABLED, VCOS_OR);
       break;
     case OMX_CommandFlush:
-      ilclient_debug_output(***REMOVED***%s: callback port flush %d***REMOVED***, st->name, nData2);
+      ilclient_debug_output("%s: callback port flush %d", st->name, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_PORT_FLUSH, VCOS_OR);
       break;
     case OMX_CommandMarkBuffer:
-      ilclient_debug_output(***REMOVED***%s: callback mark buffer %d***REMOVED***, st->name, nData2);
+      ilclient_debug_output("%s: callback mark buffer %d", st->name, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_MARKED_BUFFER, VCOS_OR);
       break;
     default:
@@ -1505,99 +1505,99 @@ static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
     switch (error) {
     case OMX_ErrorPortUnpopulated:
       if (st->error_mask & ILCLIENT_ERROR_UNPOPULATED) {
-        ilclient_debug_output(***REMOVED***%s: ignore error: port unpopulated (%d)***REMOVED***,
+        ilclient_debug_output("%s: ignore error: port unpopulated (%d)",
                               st->name, nData2);
         event = NULL;
         break;
       }
-      ilclient_debug_output(***REMOVED***%s: port unpopulated %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: port unpopulated %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorSameState:
       if (st->error_mask & ILCLIENT_ERROR_SAMESTATE) {
-        ilclient_debug_output(***REMOVED***%s: ignore error: same state (%d)***REMOVED***, st->name,
+        ilclient_debug_output("%s: ignore error: same state (%d)", st->name,
                               nData2);
         event = NULL;
         break;
       }
-      ilclient_debug_output(***REMOVED***%s: same state %x (%d)***REMOVED***, st->name, error, nData2);
+      ilclient_debug_output("%s: same state %x (%d)", st->name, error, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorBadParameter:
       if (st->error_mask & ILCLIENT_ERROR_BADPARAMETER) {
-        ilclient_debug_output(***REMOVED***%s: ignore error: bad parameter (%d)***REMOVED***, st->name,
+        ilclient_debug_output("%s: ignore error: bad parameter (%d)", st->name,
                               nData2);
         event = NULL;
         break;
       }
-      ilclient_debug_output(***REMOVED***%s: bad parameter %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: bad parameter %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorIncorrectStateTransition:
-      ilclient_debug_output(***REMOVED***%s: incorrect state transition %x (%d)***REMOVED***, st->name,
+      ilclient_debug_output("%s: incorrect state transition %x (%d)", st->name,
                             error, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorBadPortIndex:
-      ilclient_debug_output(***REMOVED***%s: bad port index %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: bad port index %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorStreamCorrupt:
-      ilclient_debug_output(***REMOVED***%s: stream corrupt %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: stream corrupt %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorInsufficientResources:
-      ilclient_debug_output(***REMOVED***%s: insufficient resources %x (%d)***REMOVED***, st->name,
+      ilclient_debug_output("%s: insufficient resources %x (%d)", st->name,
                             error, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorUnsupportedSetting:
-      ilclient_debug_output(***REMOVED***%s: unsupported setting %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: unsupported setting %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorOverflow:
-      ilclient_debug_output(***REMOVED***%s: overflow %x (%d)***REMOVED***, st->name, error, nData2);
+      ilclient_debug_output("%s: overflow %x (%d)", st->name, error, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorDiskFull:
-      ilclient_debug_output(***REMOVED***%s: disk full %x (%d)***REMOVED***, st->name, error, nData2);
+      ilclient_debug_output("%s: disk full %x (%d)", st->name, error, nData2);
       // we do not set the error
       break;
     case OMX_ErrorMaxFileSize:
-      ilclient_debug_output(***REMOVED***%s: max file size %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: max file size %x (%d)", st->name, error,
                             nData2);
       // we do not set the error
       break;
     case OMX_ErrorDrmUnauthorised:
-      ilclient_debug_output(***REMOVED***%s: drm file is unauthorised %x (%d)***REMOVED***, st->name,
+      ilclient_debug_output("%s: drm file is unauthorised %x (%d)", st->name,
                             error, nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorDrmExpired:
-      ilclient_debug_output(***REMOVED***%s: drm file has expired %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: drm file has expired %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     case OMX_ErrorDrmGeneral:
-      ilclient_debug_output(***REMOVED***%s: drm library error %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: drm library error %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     default:
       vc_assert(0);
-      ilclient_debug_output(***REMOVED***%s: unexpected error %x (%d)***REMOVED***, st->name, error,
+      ilclient_debug_output("%s: unexpected error %x (%d)", st->name, error,
                             nData2);
       vcos_event_flags_set(&st->event, ILCLIENT_EVENT_ERROR, VCOS_OR);
       break;
     }
   } break;
   case OMX_EventBufferFlag:
-    ilclient_debug_output(***REMOVED***%s: buffer flag %d/%x***REMOVED***, st->name, nData1, nData2);
+    ilclient_debug_output("%s: buffer flag %d/%x", st->name, nData1, nData2);
     if (nData2 & OMX_BUFFERFLAG_EOS) {
       vcos_event_flags_set(&st->event, ILCLIENT_BUFFER_FLAG_EOS, VCOS_OR);
       nData2 = OMX_BUFFERFLAG_EOS;
@@ -1605,15 +1605,15 @@ static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
       vc_assert(0);
     break;
   case OMX_EventPortSettingsChanged:
-    ilclient_debug_output(***REMOVED***%s: port settings changed %d***REMOVED***, st->name, nData1);
+    ilclient_debug_output("%s: port settings changed %d", st->name, nData1);
     vcos_event_flags_set(&st->event, ILCLIENT_PARAMETER_CHANGED, VCOS_OR);
     break;
   case OMX_EventMark:
-    ilclient_debug_output(***REMOVED***%s: buffer mark %p***REMOVED***, st->name, pEventData);
+    ilclient_debug_output("%s: buffer mark %p", st->name, pEventData);
     vcos_event_flags_set(&st->event, ILCLIENT_BUFFER_MARK, VCOS_OR);
     break;
   case OMX_EventParamOrConfigChanged:
-    ilclient_debug_output(***REMOVED***%s: param/config 0x%X on port %d changed***REMOVED***, st->name,
+    ilclient_debug_output("%s: param/config 0x%X on port %d changed", st->name,
                           nData2, nData1);
     vcos_event_flags_set(&st->event, ILCLIENT_CONFIG_CHANGED, VCOS_OR);
     break;
@@ -1667,14 +1667,14 @@ static OMX_ERRORTYPE ilclient_event_handler(OMX_IN OMX_HANDLETYPE hComponent,
   return OMX_ErrorNone;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_empty_buffer_done
  *
  * Description: passed to core to use as component callback, puts
  * buffer on list
  *
  * Returns:
- ***REMOVED***************/
+ ***********************************************************/
 static OMX_ERRORTYPE
 ilclient_empty_buffer_done(OMX_IN OMX_HANDLETYPE hComponent,
                            OMX_IN OMX_PTR pAppData,
@@ -1682,7 +1682,7 @@ ilclient_empty_buffer_done(OMX_IN OMX_HANDLETYPE hComponent,
   COMPONENT_T *st = (COMPONENT_T *)pAppData;
   OMX_BUFFERHEADERTYPE *list;
 
-  ilclient_debug_output(***REMOVED***%s: empty buffer done %p***REMOVED***, st->name, pBuffer);
+  ilclient_debug_output("%s: empty buffer done %p", st->name, pBuffer);
 
   vcos_semaphore_wait(&st->sema);
   // insert at end of the list, so we process buffers in
@@ -1708,14 +1708,14 @@ ilclient_empty_buffer_done(OMX_IN OMX_HANDLETYPE hComponent,
   return OMX_ErrorNone;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_empty_buffer_done_error
  *
  * Description: passed to core to use as component callback, asserts
  * on use as client not expecting component to use this callback.
  *
  * Returns:
- ***REMOVED***************/
+ ***********************************************************/
 static OMX_ERRORTYPE
 ilclient_empty_buffer_done_error(OMX_IN OMX_HANDLETYPE hComponent,
                                  OMX_IN OMX_PTR pAppData,
@@ -1724,14 +1724,14 @@ ilclient_empty_buffer_done_error(OMX_IN OMX_HANDLETYPE hComponent,
   return OMX_ErrorNone;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_fill_buffer_done
  *
  * Description: passed to core to use as component callback, puts
  * buffer on list
  *
  * Returns:
- ***REMOVED***************/
+ ***********************************************************/
 static OMX_ERRORTYPE
 ilclient_fill_buffer_done(OMX_OUT OMX_HANDLETYPE hComponent,
                           OMX_OUT OMX_PTR pAppData,
@@ -1739,7 +1739,7 @@ ilclient_fill_buffer_done(OMX_OUT OMX_HANDLETYPE hComponent,
   COMPONENT_T *st = (COMPONENT_T *)pAppData;
   OMX_BUFFERHEADERTYPE *list;
 
-  ilclient_debug_output(***REMOVED***%s: fill buffer done %p***REMOVED***, st->name, pBuffer);
+  ilclient_debug_output("%s: fill buffer done %p", st->name, pBuffer);
 
   vcos_semaphore_wait(&st->sema);
   // insert at end of the list, so we process buffers in
@@ -1765,14 +1765,14 @@ ilclient_fill_buffer_done(OMX_OUT OMX_HANDLETYPE hComponent,
   return OMX_ErrorNone;
 }
 
-/***REMOVED***************
+/***********************************************************
  * Name: ilclient_fill_buffer_done_error
  *
  * Description: passed to core to use as component callback, asserts
  * on use as client not expecting component to use this callback.
  *
  * Returns:
- ***REMOVED***************/
+ ***********************************************************/
 static OMX_ERRORTYPE
 ilclient_fill_buffer_done_error(OMX_OUT OMX_HANDLETYPE hComponent,
                                 OMX_OUT OMX_PTR pAppData,

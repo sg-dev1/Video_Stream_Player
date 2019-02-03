@@ -1,11 +1,11 @@
-#include ***REMOVED***gtest/gtest.h***REMOVED***
+#include "gtest/gtest.h"
 
-#include ***REMOVED***alsa_audio_renderer.h***REMOVED***
-#include ***REMOVED***audio_renderer.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***util.h***REMOVED***
+#include "alsa_audio_renderer.h"
+#include "audio_renderer.h"
+#include "logging.h"
+#include "util.h"
 
-#define AUDIO_TEST_DATA_PATH ***REMOVED***data/renderer/priv/audio/***REMOVED***
+#define AUDIO_TEST_DATA_PATH "data/renderer/priv/audio/"
 
 // TODO merge with mmal_renderer_test::MmalAudioRendererTest
 //  (duplicated code)
@@ -22,10 +22,10 @@ protected:
 TEST_F(AlsaAudioRendererTest, Render1) {
   std::vector<std::string> audioFiles;
   bool ret = GetFilesInDir(audioDir_, audioFiles);
-  ASSERT_TRUE(ret) << ***REMOVED***Could not load audio files. Seems that audioDir ***REMOVED*** << audioDir_ << ***REMOVED*** does not exist.***REMOVED***;
-  ASSERT_GT(audioFiles.size(), 0) << ***REMOVED***No audio test files to render found. It ***REMOVED***
-                                     ***REMOVED***seems that you have first to generated ***REMOVED***
-                                     ***REMOVED***some.***REMOVED***;
+  ASSERT_TRUE(ret) << "Could not load audio files. Seems that audioDir " << audioDir_ << " does not exist.";
+  ASSERT_GT(audioFiles.size(), 0) << "No audio test files to render found. It "
+                                     "seems that you have first to generated "
+                                     "some.";
 
   std::sort(audioFiles.begin(), audioFiles.end());
 
@@ -48,13 +48,13 @@ TEST_F(AlsaAudioRendererTest, Render1) {
     std::chrono::steady_clock::time_point startTime =
         std::chrono::steady_clock::now();
     std::string currFilePath = audioDir_ + audioFiles[i];
-    // DEBUG_PRINT(***REMOVED***Rendering ***REMOVED*** << currFilePath);
+    // DEBUG_PRINT("Rendering " << currFilePath);
 
     std::vector<uint8_t> data;
     int r = ReadFileData(currFilePath, data);
     ASSERT_GT(r, 0);
 
-    // DEBUG_PRINT(***REMOVED***# ***REMOVED*** << r << ***REMOVED*** bytes read from ***REMOVED*** << currFilePath);
+    // DEBUG_PRINT("# " << r << " bytes read from " << currFilePath);
 
     AUDIO_FRAME frame;
     frame.channels = cfg.channels;
@@ -64,8 +64,8 @@ TEST_F(AlsaAudioRendererTest, Render1) {
     frame.bufferSize = r; // data.size();
     frame.frameDuration = frameDuration;
 
-    // DEBUG_PRINT(***REMOVED***Going to render frame with ***REMOVED*** << frame.bufferSize << ***REMOVED***
-    // bytes.***REMOVED***);
+    // DEBUG_PRINT("Going to render frame with " << frame.bufferSize << "
+    // bytes.");
 
     renderer_.Render(&frame);
 
@@ -74,7 +74,7 @@ TEST_F(AlsaAudioRendererTest, Render1) {
     std::chrono::duration<double> diff = currTime - startTime;
     double timeToSleepDbl = frameDuration - diff.count();
     int timeToSleepMicros = timeToSleepDbl * 1000000;
-    // INFO_PRINT(***REMOVED***Sleeping for ***REMOVED*** << timeToSleepMicros << ***REMOVED*** microseconds.***REMOVED***);
+    // INFO_PRINT("Sleeping for " << timeToSleepMicros << " microseconds.");
     std::this_thread::sleep_for(std::chrono::microseconds(timeToSleepMicros));
   }
   renderer_.Close();

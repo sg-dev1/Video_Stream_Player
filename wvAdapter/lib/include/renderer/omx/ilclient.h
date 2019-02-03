@@ -14,7 +14,7 @@ modification, are permitted provided that the following conditions are met:
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ***REMOVED***AS IS***REMOVED*** AND
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
@@ -44,22 +44,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _IL_CLIENT_H
 #define _IL_CLIENT_H
 
-#include ***REMOVED***IL/OMX_Broadcom.h***REMOVED***
-#include ***REMOVED***interface/vcos/vcos.h***REMOVED***
+#include "IL/OMX_Broadcom.h"
+#include "interface/vcos/vcos.h"
 
 /**
  * The <DFN>ILCLIENT_T</DFN> structure encapsulates the state needed for the IL
  * Client API.  It contains a set of callback functions used to
  * communicate with the user.  It also includes a linked list of free
  * event structures.
- ***REMOVED***************/
+ ***********************************************************/
 typedef struct _ILCLIENT_T ILCLIENT_T;
 
 /**
  * Each <DFN>ILEVENT_T</DFN> structure stores the result of an
  *<DFN>EventHandler</DFN> callback from a component, storing the event message
  *type and any parameters returned.
- ***REMOVED***************/
+ ***********************************************************/
 typedef struct _ILEVENT_T ILEVENT_T;
 
 struct _COMPONENT_T;
@@ -75,7 +75,7 @@ struct _COMPONENT_T;
  * callbacks.  As some operations result in error callbacks that can
  * be ignored, an error mask is maintained to allow some errors to be
  * ignored.  A pointer to the client state structure is also added.
- ***REMOVED***************/
+ ***********************************************************/
 typedef struct _COMPONENT_T COMPONENT_T;
 
 /**
@@ -90,7 +90,7 @@ typedef struct _COMPONENT_T COMPONENT_T;
  * @param data The relevant data field from the event.
  *
  * @return Void.
- ***REMOVED***************/
+ ***********************************************************/
 typedef void (*ILCLIENT_CALLBACK_T)(void *userdata, COMPONENT_T *comp,
                                     OMX_U32 data);
 
@@ -104,7 +104,7 @@ typedef void (*ILCLIENT_CALLBACK_T)(void *userdata, COMPONENT_T *comp,
  * @param comp The component from which the buffer originated.
  *
  * @return Void.
- ***REMOVED***************/
+ ***********************************************************/
 typedef void (*ILCLIENT_BUFFER_CALLBACK_T)(void *data, COMPONENT_T *comp);
 
 /**
@@ -122,7 +122,7 @@ typedef void (*ILCLIENT_BUFFER_CALLBACK_T)(void *data, COMPONENT_T *comp);
  * @param description Text description of the memory being allocated.
  *
  * @return The memory address on success, <DFN>NULL</DFN> on failure.
- ***REMOVED***************/
+ ***********************************************************/
 typedef void *(*ILCLIENT_MALLOC_T)(void *userdata, VCOS_UNSIGNED size,
                                    VCOS_UNSIGNED align,
                                    const char *description);
@@ -141,13 +141,13 @@ typedef void *(*ILCLIENT_MALLOC_T)(void *userdata, VCOS_UNSIGNED size,
  * from <DFN>ILCLIENT_MALLOC_T</DFN> function.
  *
  * @return Void.
- ***REMOVED***************/
+ ***********************************************************/
 typedef void (*ILCLIENT_FREE_T)(void *userdata, void *pointer);
 
 /**
  * The event mask enumeration describes the possible events that the
  * user can ask to wait for when waiting for a particular event.
- ***REMOVED***************/
+ ***********************************************************/
 typedef enum {
   ILCLIENT_EMPTY_BUFFER_DONE = 0x1, /**< Set when a buffer is
                                        returned from an input
@@ -197,7 +197,7 @@ typedef enum {
 /**
  * On component creation the user can set flags to control the
  * creation of that component.
- ***REMOVED***************/
+ ***********************************************************/
 typedef enum {
   ILCLIENT_FLAGS_NONE = 0x0, /**< Used if no flags are
                                 set. */
@@ -238,7 +238,7 @@ typedef enum {
  * structure (<DFN>TUNNEL_T</DFN>) is a convenient store of the source and sink
  * of the tunnel.  For each, a pointer to the relevant component state
  * structure and the port index is stored.
- ***REMOVED***************/
+ ***********************************************************/
 typedef struct {
   COMPONENT_T *source; /**< The source component */
   int source_port;     /**< The output port index on the source component */
@@ -249,12 +249,12 @@ typedef struct {
 /**
  * The <DFN>set_tunnel</DFN> macro is a useful function that initialises a
  * <DFN>TUNNEL_T</DFN> structure.
- ***REMOVED***************/
+ ***********************************************************/
 #define set_tunnel(t, a, b, c, d)                                              \
   do {                                                                         \
     TUNNEL_T *_ilct = (t);                                                     \
-    _ilct->source = ***REMOVED***;                                                       \
-    _ilct->source_port = ***REMOVED***;                                                  \
+    _ilct->source = (a);                                                       \
+    _ilct->source_port = (b);                                                  \
     _ilct->sink = (c);                                                         \
     _ilct->sink_port = (d);                                                    \
   } while (0)
@@ -265,7 +265,7 @@ typedef struct {
  *structure.  This macro enables this while keeping the <DFN>COMPONENT_T</DFN>
  *structure opaque. The parameter <DFN>x</DFN> should be of the type
  *<DFN>*COMPONENT_T</DFN>.
- ***REMOVED***************/
+ ***********************************************************/
 #define ILC_GET_HANDLE(x) ilclient_get_handle(x)
 
 /**
@@ -275,7 +275,7 @@ typedef struct {
  * structure is maintained in the <DFN>COMPONENT_T</DFN> structure.
  *
  * @return pointer to client structure
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ ILCLIENT_T VCHPOST_ *ilclient_init(void);
 
 /**
@@ -286,7 +286,7 @@ VCHPRE_ ILCLIENT_T VCHPOST_ *ilclient_init(void);
  * handle should not be used.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_destroy(ILCLIENT_T *handle);
 
 /**
@@ -305,7 +305,7 @@ VCHPRE_ void VCHPOST_ ilclient_destroy(ILCLIENT_T *handle);
  * function.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_set_port_settings_callback(
     ILCLIENT_T *handle, ILCLIENT_CALLBACK_T func, void *userdata);
 
@@ -326,7 +326,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_port_settings_callback(
  * function.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_set_eos_callback(ILCLIENT_T *handle,
                                                 ILCLIENT_CALLBACK_T func,
                                                 void *userdata);
@@ -347,7 +347,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_eos_callback(ILCLIENT_T *handle,
  * function.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_set_error_callback(ILCLIENT_T *handle,
                                                   ILCLIENT_CALLBACK_T func,
                                                   void *userdata);
@@ -371,7 +371,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_error_callback(ILCLIENT_T *handle,
  * function.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_set_configchanged_callback(
     ILCLIENT_T *handle, ILCLIENT_CALLBACK_T func, void *userdata);
 
@@ -393,7 +393,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_configchanged_callback(
  * function.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_set_fill_buffer_done_callback(
     ILCLIENT_T *handle, ILCLIENT_BUFFER_CALLBACK_T func, void *userdata);
 
@@ -416,7 +416,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_fill_buffer_done_callback(
  * function.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_set_empty_buffer_done_callback(
     ILCLIENT_T *handle, ILCLIENT_BUFFER_CALLBACK_T func, void *userdata);
 
@@ -431,7 +431,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_empty_buffer_done_callback(
  *
  * @param name The name of the component to be created.  Component
  * names as provided are automatically prefixed with
- * <DFN>***REMOVED***OMX.broadcom.***REMOVED***</DFN> before passing to the IL core.  The name
+ * <DFN>"OMX.broadcom."</DFN> before passing to the IL core.  The name
  * provided will also be used in debugging messages added about this
  * component.
  *
@@ -440,7 +440,7 @@ VCHPRE_ void VCHPOST_ ilclient_set_empty_buffer_done_callback(
  * by the <DFN>ILCLIENT_CREATE_FLAGS_T</DFN> type.
  *
  * @return 0 on success, -1 on failure
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_create_component(ILCLIENT_T *handle,
                                                COMPONENT_T **comp, char *name,
                                                ILCLIENT_CREATE_FLAGS_T flags);
@@ -455,7 +455,7 @@ VCHPRE_ int VCHPOST_ ilclient_create_component(ILCLIENT_T *handle,
  * deallocated.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_cleanup_components(COMPONENT_T *list[]);
 
 /**
@@ -471,7 +471,7 @@ VCHPRE_ void VCHPOST_ ilclient_cleanup_components(COMPONENT_T *list[]);
  * @param state The new state to transition to.
  *
  * @return 0 on success, -1 on failure.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_change_component_state(COMPONENT_T *comp,
                                                      OMX_STATETYPE state);
 
@@ -489,7 +489,7 @@ VCHPRE_ int VCHPOST_ ilclient_change_component_state(COMPONENT_T *comp,
  * @param state The new state to which to transition all components.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_state_transition(COMPONENT_T *list[],
                                                 OMX_STATETYPE state);
 
@@ -506,7 +506,7 @@ VCHPRE_ void VCHPOST_ ilclient_state_transition(COMPONENT_T *list[],
  * be a named port index, rather than a <DFN>OMX_ALL</DFN> value.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_disable_port(COMPONENT_T *comp, int portIndex);
 
 /**
@@ -522,7 +522,7 @@ VCHPRE_ void VCHPOST_ ilclient_disable_port(COMPONENT_T *comp, int portIndex);
  * be a named port index, rather than a <DFN>OMX_ALL</DFN> value.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_enable_port(COMPONENT_T *comp, int portIndex);
 
 /**
@@ -548,7 +548,7 @@ VCHPRE_ void VCHPOST_ ilclient_enable_port(COMPONENT_T *comp, int portIndex);
  * arguments are not <DFN>NULL</DFN>.
  *
  * @return 0 indicates success. -1 indicates failure.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_enable_port_buffers(
     COMPONENT_T *comp, int portIndex, ILCLIENT_MALLOC_T ilclient_malloc,
     ILCLIENT_FREE_T ilclient_free, void *userdata);
@@ -618,7 +618,7 @@ VCHPRE_ void VCHPOST_ ilclient_disable_port_buffers(
  *  - -3: no streams are available from this port
  *  - -4: requested stream is not available from this port
  *  - -5: the data format was not acceptable to the sink
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_setup_tunnel(TUNNEL_T *tunnel,
                                            unsigned int portStream,
                                            int timeout);
@@ -635,7 +635,7 @@ VCHPRE_ int VCHPOST_ ilclient_setup_tunnel(TUNNEL_T *tunnel,
  * @param tunnel The tunnel to disable.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_disable_tunnel(TUNNEL_T *tunnel);
 
 /**
@@ -660,7 +660,7 @@ VCHPRE_ void VCHPOST_ ilclient_disable_tunnel(TUNNEL_T *tunnel);
  * @param tunnel The tunnel to enable.
  *
  * @return 0 on success, -1 on failure.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_enable_tunnel(TUNNEL_T *tunnel);
 
 /**
@@ -677,7 +677,7 @@ VCHPRE_ int VCHPOST_ ilclient_enable_tunnel(TUNNEL_T *tunnel);
  * A value of 0 indicates that all tunnels in the list are flushed.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_flush_tunnels(TUNNEL_T *tunnel, int max);
 
 /**
@@ -693,7 +693,7 @@ VCHPRE_ void VCHPOST_ ilclient_flush_tunnels(TUNNEL_T *tunnel, int max);
  * terminated with a tunnel structure with <DFN>NULL</DFN> component entries.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_teardown_tunnels(TUNNEL_T *tunnels);
 
 /**
@@ -710,7 +710,7 @@ VCHPRE_ void VCHPOST_ ilclient_teardown_tunnels(TUNNEL_T *tunnels);
  *available.
  *
  * @return Pointer to buffer if available, otherwise <DFN>NULL</DFN>.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ OMX_BUFFERHEADERTYPE *VCHPOST_
 ilclient_get_output_buffer(COMPONENT_T *comp, int portIndex, int block);
 
@@ -728,7 +728,7 @@ ilclient_get_output_buffer(COMPONENT_T *comp, int portIndex, int block);
  *available.
  *
  * @return pointer to buffer if available, otherwise <DFN>NULL</DFN>
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ OMX_BUFFERHEADERTYPE *VCHPOST_
 ilclient_get_input_buffer(COMPONENT_T *comp, int portIndex, int block);
 
@@ -755,7 +755,7 @@ ilclient_get_input_buffer(COMPONENT_T *comp, int portIndex, int block);
  *
  * @return 0 if the event was removed.  -1 if no matching event was
  * found.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_remove_event(COMPONENT_T *comp,
                                            OMX_EVENTTYPE event, OMX_U32 nData1,
                                            int ignore1, OMX_U32 nData2,
@@ -771,7 +771,7 @@ VCHPRE_ int VCHPOST_ ilclient_remove_event(COMPONENT_T *comp,
  * the free list.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_return_events(COMPONENT_T *comp);
 
 /**
@@ -815,7 +815,7 @@ VCHPRE_ void VCHPOST_ ilclient_return_events(COMPONENT_T *comp);
  *  - -1: a timeout was received.
  *  - -2: an error event was received.
  *  - -3: a config changed event was received.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_wait_for_event(COMPONENT_T *comp,
                                              OMX_EVENTTYPE event,
                                              OMX_U32 nData1, int ignore1,
@@ -840,7 +840,7 @@ VCHPRE_ int VCHPOST_ ilclient_wait_for_event(COMPONENT_T *comp,
  * @return 0 indicates success, either the command successfully completed
  * or the <DFN>OMX_ErrorSameState</DFN> was returned.  -1 indicates
  * that the command terminated with a different error message.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_wait_for_command_complete(COMPONENT_T *comp,
                                                         OMX_COMMANDTYPE command,
                                                         OMX_U32 nData2);
@@ -874,7 +874,7 @@ VCHPRE_ int VCHPOST_ ilclient_wait_for_command_complete(COMPONENT_T *comp,
  * message. -2 indicates that the related component raised an error.
  * In this case, the error is not cleared from the related
  * component's event list.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_wait_for_command_complete_dual(
     COMPONENT_T *comp, OMX_COMMANDTYPE command, OMX_U32 nData2,
     COMPONENT_T *related);
@@ -890,7 +890,7 @@ VCHPRE_ int VCHPOST_ ilclient_wait_for_command_complete_dual(
  * argument list similar to <DFN>printf</DFN> and other standard C functions.
  *
  * @return void
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ void VCHPOST_ ilclient_debug_output(char *format, ...);
 
 /**
@@ -902,7 +902,7 @@ VCHPRE_ void VCHPOST_ ilclient_debug_output(char *format, ...);
  * @param comp  IL component handle
  *
  * @return The <DFN>OMX_HANDLETYPE</DFN> value for the component.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ OMX_HANDLETYPE VCHPOST_ ilclient_get_handle(COMPONENT_T *comp);
 
 #ifndef OMX_SKIP64BIT
@@ -962,7 +962,7 @@ static inline int64_t ilclient_ticks_to_s64(OMX_TICKS t) {
  * @param index   Which port (counting from 0).
  *
  * @return        The port index, or -1 if not found.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_get_port_index(COMPONENT_T *comp, OMX_DIRTYPE dir,
                                              OMX_PORTDOMAINTYPE type,
                                              int index);
@@ -978,7 +978,7 @@ VCHPRE_ int VCHPOST_ ilclient_get_port_index(COMPONENT_T *comp, OMX_DIRTYPE dir,
  * @param nBufSizeHint Size of buffer in bytes
  *
  * @return             0 indicates success, -1 indicates failure.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ int VCHPOST_ ilclient_suggest_bufsize(COMPONENT_T *comp,
                                               OMX_U32 nBufSizeHint);
 
@@ -987,7 +987,7 @@ VCHPRE_ int VCHPOST_ ilclient_suggest_bufsize(COMPONENT_T *comp,
  * stack size that tasks calling into with API will require.
  *
  * @return    Suggested stack size in bytes.
- ***REMOVED***************/
+ ***********************************************************/
 VCHPRE_ unsigned int VCHPOST_ ilclient_stack_size(void);
 
 #endif /* ILCLIENT_H */

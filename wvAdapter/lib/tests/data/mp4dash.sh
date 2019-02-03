@@ -2,8 +2,8 @@
 #
 # Must be placed in Bento4's root folder
 
-if [[ ***REMOVED***$#***REMOVED*** -ne 5 ]]; then
-  echo ***REMOVED***Usage: $0 PROVIDER CONTENT_ID KID KEY FILE_TO_ENCRYPT***REMOVED*** >&2
+if [[ "$#" -ne 5 ]]; then
+  echo "Usage: $0 PROVIDER CONTENT_ID KID KEY FILE_TO_ENCRYPT" >&2
   exit 1
 fi
 

@@ -1,7 +1,7 @@
-#include ***REMOVED***sdl_video_renderer.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***video_renderer.h***REMOVED***
+#include "sdl_video_renderer.h"
+#include "assertion.h"
+#include "logging.h"
+#include "video_renderer.h"
 
 // #define SCREEN_WIDTH 1920
 // #define SCREEN_HEIGHT 1080
@@ -20,17 +20,17 @@ SDLVideoRenderer::SDLVideoRenderer() {
 
 #if !defined(DISABLE_AUDIO) && !defined(DISABLE_VIDEO)
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-    ERROR_PRINT(***REMOVED***Could not initialize SDL: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("Could not initialize SDL: " << SDL_GetError());
     ASSERT(false);
   }
 #elif !defined(DISABLE_AUDIO)
   if (SDL_Init(SDL_INIT_AUDIO)) {
-    ERROR_PRINT(***REMOVED***Could not initialize SDL: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("Could not initialize SDL: " << SDL_GetError());
     ASSERT(false);
   }
 #elif !defined(DISABLE_VIDEO)
   if (SDL_Init(SDL_INIT_VIDEO)) {
-    ERROR_PRINT(***REMOVED***Could not initialize SDL: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("Could not initialize SDL: " << SDL_GetError());
     ASSERT(false);
   }
 #endif
@@ -40,16 +40,16 @@ bool SDLVideoRenderer::Open(void *cfg) {
   VideoRendererConfig *videoCfg = reinterpret_cast<VideoRendererConfig *>(cfg);
 
   // https://wiki.libsdl.org/MigrationGuide
-  sdlWindow_ = SDL_CreateWindow(***REMOVED***Videoplayer***REMOVED***, SDL_WINDOWPOS_UNDEFINED,
+  sdlWindow_ = SDL_CreateWindow("Videoplayer", SDL_WINDOWPOS_UNDEFINED,
                                 SDL_WINDOWPOS_UNDEFINED, 0, 0,
                                 SDL_WINDOW_FULLSCREEN_DESKTOP);
   if (!sdlWindow_) {
-    ERROR_PRINT(***REMOVED***SDL_CreateWindow failed: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("SDL_CreateWindow failed: " << SDL_GetError());
     return false;
   }
   sdlRenderer_ = SDL_CreateRenderer(sdlWindow_, -1, 0);
   if (!sdlRenderer_) {
-    ERROR_PRINT(***REMOVED***SDL_CreateRenderer failed: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("SDL_CreateRenderer failed: " << SDL_GetError());
     return false;
   }
 
@@ -60,7 +60,7 @@ bool SDLVideoRenderer::Open(void *cfg) {
                                   SDL_TEXTUREACCESS_STREAMING, videoCfg->width,
                                   videoCfg->height);
   if (!sdlTexture_) {
-    ERROR_PRINT(***REMOVED***SDL_CreateTexture failed: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("SDL_CreateTexture failed: " << SDL_GetError());
     return false;
   }
 
@@ -98,7 +98,7 @@ void SDLVideoRenderer::Render(FRAME *frame) {
                              videoFrame->buffer + videoFrame->v_plane_offset,
                              videoFrame->v_plane_stride);
   if (ret != 0) {
-    ERROR_PRINT(***REMOVED***SDL_UpdateTexture failed with: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("SDL_UpdateTexture failed with: " << SDL_GetError());
     ASSERT(false);
     return;
   }
@@ -106,12 +106,12 @@ void SDLVideoRenderer::Render(FRAME *frame) {
   // 2) get texture displayed on screen
   ret = SDL_RenderClear(sdlRenderer_);
   if (ret != 0) {
-    ERROR_PRINT(***REMOVED***SDL_RenderClear failed with: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("SDL_RenderClear failed with: " << SDL_GetError());
     return;
   }
   ret = SDL_RenderCopy(sdlRenderer_, sdlTexture_, nullptr, nullptr);
   if (ret != 0) {
-    ERROR_PRINT(***REMOVED***SDL_RenderCopy failed with: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("SDL_RenderCopy failed with: " << SDL_GetError());
     return;
   }
   SDL_RenderPresent(sdlRenderer_);

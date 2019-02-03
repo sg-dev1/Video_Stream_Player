@@ -1,11 +1,11 @@
-#include ***REMOVED***adapterInterface.h***REMOVED***
+#include "adapterInterface.h"
 
-#include ***REMOVED***components.h***REMOVED***
-#include ***REMOVED***widevineAdapter.h***REMOVED***
-#include ***REMOVED***networking.h***REMOVED***
-#include ***REMOVED***video.h***REMOVED***
-#include ***REMOVED***audio.h***REMOVED***
-#include ***REMOVED***widevineDecryptor.h***REMOVED***
+#include "components.h"
+#include "widevineAdapter.h"
+#include "networking.h"
+#include "video.h"
+#include "audio.h"
+#include "widevineDecryptor.h"
 
 
 class AdapterInterface::Impl {
@@ -136,13 +136,13 @@ bool AdapterInterface::Impl::CreateSessionAndGenerateRequest(
 
   if (type == AdapterInterface::STREAM_TYPE::kAudio) {
     PRINT_BYTE_ARRAY(
-        ***REMOVED***(AUDIO) CreateSessionAndGenerateRequest called with data :***REMOVED***, initData,
+        "(AUDIO) CreateSessionAndGenerateRequest called with data :", initData,
         initDataSize);
 
     audioAdapter_->CreateSessionAndGenerateRequest(initData, initDataSize);
   } else {
     PRINT_BYTE_ARRAY(
-        ***REMOVED***(VIDEO) CreateSessionAndGenerateRequest called with data :***REMOVED***, initData,
+        "(VIDEO) CreateSessionAndGenerateRequest called with data :", initData,
         initDataSize);
 
     videoAdapter_->CreateSessionAndGenerateRequest(initData, initDataSize);
@@ -178,12 +178,12 @@ void AdapterInterface::Impl::UpdateCurrentSession(
 std::string AdapterInterface::Impl::GetSessionMessage(STREAM_TYPE type) {
   if (type == STREAM_TYPE::kAudio) {
     if (!audioAdapter_->IsMessageValid()) {
-      return ***REMOVED******REMOVED***;
+      return "";
     }
     return audioAdapter_->GetMessage();
   } else {
     if (!videoAdapter_->IsMessageValid()) {
-      return ***REMOVED******REMOVED***;
+      return "";
     }
     return videoAdapter_->GetMessage();
   }
@@ -216,7 +216,7 @@ bool AdapterInterface::Impl::InitStream(
                               videoInitDataSize, codecPrivateData,
                               codecPrivateDataSize);
   if (!result) {
-    ERROR_PRINT(***REMOVED***Init Video Stream failed***REMOVED***);
+    ERROR_PRINT("Init Video Stream failed");
     return false;
   }
 
@@ -233,7 +233,7 @@ bool AdapterInterface::Impl::InitStream(
     return false;
   }
   if (ret == cdm::Status::kDeferredInitialization) {
-    WARN_PRINT(***REMOVED***Init CDM video decoder warning: kDeferredInitialization***REMOVED***);
+    WARN_PRINT("Init CDM video decoder warning: kDeferredInitialization");
     videoAdapter_->ResetVideoDecoder();
     decoderNotInitializedYet_ = true;
     // TODO add later init
@@ -257,7 +257,7 @@ bool AdapterInterface::Impl::InitStream(
   result = audioStream_->Init(audioUrl, audioRangeList, audioInitData,
                               audioInitDataSize, nullptr, 0);
   if (!result) {
-    ERROR_PRINT(***REMOVED***Init Audio Stream failed***REMOVED***);
+    ERROR_PRINT("Init Audio Stream failed");
     return false;
   }
 
@@ -282,7 +282,7 @@ bool AdapterInterface::Impl::InitStream(
     return false;
   }
   if (ret == cdm::Status::kDeferredInitialization) {
-    WARN_PRINT(***REMOVED***Init CDM audio decoder warning: kDeferredInitialization***REMOVED***);
+    WARN_PRINT("Init CDM audio decoder warning: kDeferredInitialization");
     audioCdm_->ResetDecoder(cdm::StreamType::kStreamTypeAudio);
     audioDecoderNotInitializedYet_ = true;
     // TODO add later init
@@ -298,31 +298,31 @@ bool AdapterInterface::Impl::InitStream(
 
 bool AdapterInterface::Impl::StartStream() {
   if (!isInitialized_ || !streamInitialized_) {
-    ERROR_PRINT(***REMOVED***Either the adapter and/or the stream was not initialized.***REMOVED***);
+    ERROR_PRINT("Either the adapter and/or the stream was not initialized.");
     return false;
   }
 
   // start all threads
 #ifndef DISABLE_VIDEO
-  videoNetThread_.Start(***REMOVED***videoNetThread***REMOVED***, MEDIA_TYPE::kVideo, videoStream_->GetMediaFileUrl(), videoStream_->GetRangeList());
-  demuxVideoThread_.Start(***REMOVED***demuxVideoThread***REMOVED***);
-  decryptVideoThread_.Start(***REMOVED***decryptVideoThread***REMOVED***);
-  renderVideoThread_.Start(***REMOVED***renderVideoThread***REMOVED***);
+  videoNetThread_.Start("videoNetThread", MEDIA_TYPE::kVideo, videoStream_->GetMediaFileUrl(), videoStream_->GetRangeList());
+  demuxVideoThread_.Start("demuxVideoThread");
+  decryptVideoThread_.Start("decryptVideoThread");
+  renderVideoThread_.Start("renderVideoThread");
 #endif /* DISABLE_VIDEO */
 
 #ifndef DISABLE_AUDIO
-  audioNetThread_.Start(***REMOVED***audioNetThread***REMOVED***, MEDIA_TYPE::kAudio, audioStream_->GetMediaFileUrl(),
+  audioNetThread_.Start("audioNetThread", MEDIA_TYPE::kAudio, audioStream_->GetMediaFileUrl(),
                         audioStream_->GetRangeList());
-  demuxAudioThread_.Start(***REMOVED***demuxAudioThread***REMOVED***);
+  demuxAudioThread_.Start("demuxAudioThread");
   if (audioStream_->isProtected()) {
-    decryptAudioThread_.Start(***REMOVED***decryptAudioThread***REMOVED***, MEDIA_TYPE::kAudio);
-    decodeAudioThread_.Start(***REMOVED***decodeAudioThread***REMOVED***);
+    decryptAudioThread_.Start("decryptAudioThread", MEDIA_TYPE::kAudio);
+    decodeAudioThread_.Start("decodeAudioThread");
 
   } else {
-    decodeAudioThread_.Start(***REMOVED***decodeAudioThread***REMOVED***);
+    decodeAudioThread_.Start("decodeAudioThread");
   }
 
-  renderAudioThread_.Start(***REMOVED***renderAudioThread***REMOVED***);
+  renderAudioThread_.Start("renderAudioThread");
 #endif /* DISABLE_AUDIO */
 
   return true;
@@ -330,10 +330,10 @@ bool AdapterInterface::Impl::StartStream() {
 
 void AdapterInterface::Impl::WaitForStream() {
   if (!isInitialized_ || !streamInitialized_) {
-    ERROR_PRINT(***REMOVED***Either the adapter and/or the stream was not initialized.***REMOVED***);
+    ERROR_PRINT("Either the adapter and/or the stream was not initialized.");
     return;
   }
-  INFO_PRINT(***REMOVED***AdapterInterface::Impl::WaitForStream()***REMOVED***);
+  INFO_PRINT("AdapterInterface::Impl::WaitForStream()");
 
   // sync threads
 #ifndef DISABLE_VIDEO
@@ -358,7 +358,7 @@ void AdapterInterface::Impl::WaitForStream() {
 
 bool AdapterInterface::Impl::StopStream() {
   if (!isInitialized_ || !streamInitialized_) {
-    ERROR_PRINT(***REMOVED***Either the adapter and/or the stream was not initialized.***REMOVED***);
+    ERROR_PRINT("Either the adapter and/or the stream was not initialized.");
     return false;
   }
 
@@ -460,17 +460,17 @@ void AdapterInterface::PrintQueueCounterSummary() {
                               DEMUX_AUDIO_SAMPLE_QUEUE_NAME, DECRYPTED_AUDIO_SAMPLE_QUEUE_NAME,
                               AUDIO_FRAME_QUEUE_NAME};
   QueueCounterSummary summaries[arrSize];
-  INFO_PRINT(***REMOVED***-----------------------------------------***REMOVED***);
+  INFO_PRINT("-----------------------------------------");
 #ifndef DISABLE_QUEUE_COUNTERS
   for(size_t i = 0; i < arrSize; i++) {
     wvAdapterLib::GetQueueCounter()->GetSummary(queueNames[i], summaries[i]);
-    INFO_PRINT(***REMOVED***Summary for Queue '***REMOVED*** << queueNames[i] << ***REMOVED***:\n***REMOVED*** <<
+    INFO_PRINT("Summary for Queue '" << queueNames[i] << ":\n" <<
                summaries[i].toString());
   }
 #else
-  INFO_PRINT(***REMOVED***Queue counters were disabled in this build. So no queue counter summary can be printed.***REMOVED***);
+  INFO_PRINT("Queue counters were disabled in this build. So no queue counter summary can be printed.");
 #endif // DISABLE_QUEUE_COUNTERS
-  INFO_PRINT(***REMOVED***-----------------------------------------***REMOVED***);
+  INFO_PRINT("-----------------------------------------");
 }
 
 void AdapterInterface::StopPlayback() {

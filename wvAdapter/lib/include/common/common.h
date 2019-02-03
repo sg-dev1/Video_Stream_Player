@@ -9,9 +9,9 @@
     #define WV_ADAPTER_HELPER_DLL_LOCAL
 #else
 #if __GNUC__ >= 4
-    #define WV_ADAPTER_HELPER_DLL_IMPORT __attribute__ ((visibility (***REMOVED***default***REMOVED***)))
-    #define WV_ADAPTER_HELPER_DLL_EXPORT __attribute__ ((visibility (***REMOVED***default***REMOVED***)))
-    #define WV_ADAPTER_HELPER_DLL_LOCAL  __attribute__ ((visibility (***REMOVED***hidden***REMOVED***)))
+    #define WV_ADAPTER_HELPER_DLL_IMPORT __attribute__ ((visibility ("default")))
+    #define WV_ADAPTER_HELPER_DLL_EXPORT __attribute__ ((visibility ("default")))
+    #define WV_ADAPTER_HELPER_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
 #else
     #define WV_ADAPTER_HELPER_DLL_IMPORT
     #define WV_ADAPTER_HELPER_DLL_EXPORT

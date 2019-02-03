@@ -1,8 +1,8 @@
-#include ***REMOVED***blocking_stream.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***queue_counter.h***REMOVED***
-#include ***REMOVED***constants.h***REMOVED***
+#include "blocking_stream.h"
+#include "assertion.h"
+#include "logging.h"
+#include "queue_counter.h"
+#include "constants.h"
 
 #include <deque>
 #include <mutex>
@@ -73,13 +73,13 @@ private:
 };
 
 #define CHECK_INVARIANT() DEBUG_ASSERT_MSG(currentWriteIdx_ <= currentReadIdx_ && currentWriteIdx_ >= -1 && currentReadIdx_ < static_cast<int64_t >(fragmentDeque_.size()), \
-    ***REMOVED***currentReadIdx=***REMOVED*** << currentReadIdx_ << ***REMOVED***, currentWriteIdx=***REMOVED*** << currentWriteIdx_ \
-    << ***REMOVED***, fragmentDeque.size=***REMOVED*** << fragmentDeque_.size());
+    "currentReadIdx=" << currentReadIdx_ << ", currentWriteIdx=" << currentWriteIdx_ \
+    << ", fragmentDeque.size=" << fragmentDeque_.size());
 #define CHECK_IDX_BOUNDS(idx) DEBUG_ASSERT(idx >= 0 && idx < static_cast<int64_t>(fragmentDeque_.size()))
 
 template<typename NETWORK_FRAGMENT_Type>
 void BlockingStream::Impl::AddFragmentImpl(NETWORK_FRAGMENT_Type &&fragmentVector) {
-  DEBUG_PRINT(***REMOVED***AddFragmentImpl***REMOVED***);
+  DEBUG_PRINT("AddFragmentImpl");
   {
     std::unique_lock<std::mutex> lock(lock_);
 
@@ -107,7 +107,7 @@ void BlockingStream::Impl::AddFragment(NETWORK_FRAGMENT &&fragmentVector) {
 }
 
 NETWORK_FRAGMENT BlockingStream::Impl::PopFragment() {
-  DEBUG_PRINT(***REMOVED***PopFragment***REMOVED***);
+  DEBUG_PRINT("PopFragment");
   NETWORK_FRAGMENT result;
   {
     std::unique_lock<std::mutex> lock(lock_);
@@ -153,8 +153,8 @@ AP4_Result BlockingStream::Impl::ReadPartial(void *buffer, AP4_Size bytes_to_rea
     }
 
     CHECK_IDX_BOUNDS(currentReadIdx_);
-    //DEBUG_PRINT(***REMOVED***Accessing data at index ***REMOVED*** << currentReadIdx_ << ***REMOVED*** at position ***REMOVED*** << readPosition_
-    //                                       << ***REMOVED*** with size ***REMOVED*** << fragmentDeque_[currentReadIdx_].size);
+    //DEBUG_PRINT("Accessing data at index " << currentReadIdx_ << " at position " << readPosition_
+    //                                       << " with size " << fragmentDeque_[currentReadIdx_].size);
 
     auto neededSize = static_cast<AP4_Size>(readPosition_ + bytes_to_read);
     uint32_t currFragmentSize = fragmentDeque_[currentReadIdx_].size;
@@ -162,19 +162,19 @@ AP4_Result BlockingStream::Impl::ReadPartial(void *buffer, AP4_Size bytes_to_rea
     // check if more bytes where requested than left
     if (neededSize > currFragmentSize) {
       auto bytesToReadNew = static_cast<AP4_Size>(currFragmentSize - readPosition_);
-      INFO_PRINT(***REMOVED***Truncating requested bytes to ***REMOVED*** << bytesToReadNew <<
-                 ***REMOVED***( old=***REMOVED*** << bytes_to_read << ***REMOVED***)***REMOVED***);
-      DEBUG_PRINT(***REMOVED***currFragmentSize=***REMOVED*** << currFragmentSize << ***REMOVED***, readPosition_=***REMOVED*** << readPosition_
-                                      << ***REMOVED***, neededSize=***REMOVED*** << neededSize);
+      INFO_PRINT("Truncating requested bytes to " << bytesToReadNew <<
+                 "( old=" << bytes_to_read << ")");
+      DEBUG_PRINT("currFragmentSize=" << currFragmentSize << ", readPosition_=" << readPosition_
+                                      << ", neededSize=" << neededSize);
       bytes_to_read = bytesToReadNew;
     } else if (neededSize == currFragmentSize) {
       // read everything till the end
-      INFO_PRINT(***REMOVED***Can do an (automatic) advance since this request will read all remaining data***REMOVED***);
+      INFO_PRINT("Can do an (automatic) advance since this request will read all remaining data");
       doAdvance = true;
     }
 
     if (bytes_to_read == 0) {
-      WARN_PRINT(***REMOVED***Cannot read any more bytes. Nothing left.***REMOVED***);
+      WARN_PRINT("Cannot read any more bytes. Nothing left.");
       // This is not expected to be triggered by the Bento4 client
       bytes_read = 0;
       return AP4_ERROR_EOS;
@@ -225,24 +225,24 @@ AP4_Result BlockingStream::Impl::WritePartial(const void *buffer,
     // check if more bytes where requested than left
     if (neededSize > currFragmentSize) {
       auto bytesToReadNew = static_cast<AP4_Size>(currFragmentSize - writePosition_);
-      INFO_PRINT(***REMOVED***Truncating requested bytes to ***REMOVED*** << bytesToReadNew <<
-                                                  ***REMOVED***( old=***REMOVED*** << bytes_to_write << ***REMOVED***)***REMOVED***);
+      INFO_PRINT("Truncating requested bytes to " << bytesToReadNew <<
+                                                  "( old=" << bytes_to_write << ")");
       bytes_to_write = bytesToReadNew;
     } else if (neededSize == currFragmentSize) {
       // write till the end of the fragment
-      DEBUG_PRINT(***REMOVED***Can do an (automatic) advance since this request will read all remaining data***REMOVED***);
+      DEBUG_PRINT("Can do an (automatic) advance since this request will read all remaining data");
       doAdvance = true;
     }
 
     if (bytes_to_write == 0) {
-      WARN_PRINT(***REMOVED***Cannot write any more bytes. No space left.***REMOVED***);
+      WARN_PRINT("Cannot write any more bytes. No space left.");
       // This is not expected to be triggered by a client
       bytes_written = 0;
       return AP4_ERROR_EOS;
     }
 
-    //DEBUG_PRINT(***REMOVED***Writing data at index ***REMOVED*** << currentWriteIdx_ << ***REMOVED*** at position ***REMOVED*** << writePosition_
-    //                                       << ***REMOVED*** with size ***REMOVED*** << fragmentDeque_[currentWriteIdx_].size);
+    //DEBUG_PRINT("Writing data at index " << currentWriteIdx_ << " at position " << writePosition_
+    //                                       << " with size " << fragmentDeque_[currentWriteIdx_].size);
 
     // do the actual write
     memcpy(fragmentDeque_[currentWriteIdx_].buffer.get() + writePosition_, buffer, bytes_to_write);
@@ -271,21 +271,21 @@ AP4_Result BlockingStream::Impl::Seek(AP4_Position position) {
   {
     std::unique_lock<std::mutex> lock(lock_);
 
-    DEBUG_PRINT(***REMOVED***Seek at pos ***REMOVED*** << position);
+    DEBUG_PRINT("Seek at pos " << position);
 
     CHECK_IDX_BOUNDS(currentReadIdx_);
 
     // error case
     if (position > fragmentDeque_[currentReadIdx_].size) {
-      WARN_PRINT(***REMOVED***position > fragmentDeque_[currentReadIdx_].size(): ***REMOVED***
-                     << position << ***REMOVED*** > ***REMOVED*** << fragmentDeque_[currentReadIdx_].size);
+      WARN_PRINT("position > fragmentDeque_[currentReadIdx_].size(): "
+                     << position << " > " << fragmentDeque_[currentReadIdx_].size);
       return AP4_FAILURE;
     }
     // this seems to be intended behavior since this condition is very often triggered
     // so just log it with debug to be not that verbose
     if (position == fragmentDeque_[currentReadIdx_].size) {
-      DEBUG_PRINT(***REMOVED***Setting position to size of data buffer (would be a out of range***REMOVED***
-      << ***REMOVED*** position.)! Triggering an advance!***REMOVED***);
+      DEBUG_PRINT("Setting position to size of data buffer (would be a out of range"
+      << " position.)! Triggering an advance!");
       readPosition_ = 0;
       currentReadIdx_--;
     } else {
@@ -299,7 +299,7 @@ AP4_Result BlockingStream::Impl::Seek(AP4_Position position) {
 }
 
 AP4_Result BlockingStream::Impl::Tell(AP4_Position &position) {
-  DEBUG_PRINT(***REMOVED***Tell***REMOVED***);
+  DEBUG_PRINT("Tell");
   {
     std::unique_lock<std::mutex> lock(lock_);
 

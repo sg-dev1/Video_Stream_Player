@@ -1,7 +1,7 @@
 /*
  * See https://github.com/google/googletest/blob/master/googletest/docs/primer.md#writing-the-main-function
  **/
-#include ***REMOVED***gtest/gtest.h***REMOVED***
+#include "gtest/gtest.h"
 
 namespace {
 
@@ -37,8 +37,8 @@ class FooTest : public ::testing::Test {
 
 // Tests that the Foo::Bar() method does Abc.
 TEST_F(FooTest, MethodBarDoesAbc) {
-  // const string input_filepath = ***REMOVED***this/package/testdata/myinputfile.dat***REMOVED***;
-  // const string output_filepath = ***REMOVED***this/package/testdata/myoutputfile.dat***REMOVED***;
+  // const string input_filepath = "this/package/testdata/myinputfile.dat";
+  // const string output_filepath = "this/package/testdata/myoutputfile.dat";
   // Foo f;
   // EXPECT_EQ(0, f.Bar(input_filepath, output_filepath));
 }

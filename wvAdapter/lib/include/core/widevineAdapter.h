@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include ***REMOVED***constants.h***REMOVED***
-#include ***REMOVED***content_decryption_module.h***REMOVED***
+#include "constants.h"
+#include "content_decryption_module.h"
 
 class WidevineAdapter : public cdm::Host_8 {
 public:

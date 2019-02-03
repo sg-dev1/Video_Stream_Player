@@ -4,8 +4,8 @@ execute_process(
         OUTPUT_VARIABLE PI_VERSION
 )
 
-if (NOT PI_VERSION STREQUAL ***REMOVED******REMOVED***)
-    message(STATUS ***REMOVED***Building for Raspberry Pi version ${PI_VERSION}***REMOVED***)
+if (NOT PI_VERSION STREQUAL "")
+    message(STATUS "Building for Raspberry Pi version ${PI_VERSION}")
 
     list(APPEND SOURCES
             ${SRC_DIR}/renderer/omx/ilclient.c

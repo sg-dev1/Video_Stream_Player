@@ -1,7 +1,7 @@
 #ifndef SDL_VIDEO_RENDERER_
 #define SDL_VIDEO_RENDERER_
 
-#include ***REMOVED***renderer.h***REMOVED***
+#include "renderer.h"
 
 #include <SDL2/SDL.h>
 

@@ -1,8 +1,8 @@
 #ifndef ALSA_AUDIO_RENDERER_
 #define ALSA_AUDIO_RENDERER_
 
-#include ***REMOVED***renderer.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "renderer.h"
+#include "common.h"
 
 #include <alsa/asoundlib.h>
 #include <mutex>

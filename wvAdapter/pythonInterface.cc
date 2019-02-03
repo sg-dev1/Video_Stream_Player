@@ -6,22 +6,22 @@
 //  - improve error handling on python side (not just return nullptr but set
 //  error)
 //
-#define PY_SSIZE_T_CLEAN /* Make ***REMOVED***s#***REMOVED*** use Py_ssize_t rather than int. */
+#define PY_SSIZE_T_CLEAN /* Make "s#" use Py_ssize_t rather than int. */
 #include <Python.h>
 
-#include ***REMOVED***adapterInterface.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "adapterInterface.h"
+#include "logging.h"
 
 #ifdef RASPBERRY_PI
-#include ***REMOVED***mmal_video_renderer.h***REMOVED***
+#include "mmal_video_renderer.h"
 #endif
 
-#define DUMP_DIR ***REMOVED***/tmp/widevineAdapter/***REMOVED***
+#define DUMP_DIR "/tmp/widevineAdapter/"
 
 //
 // Python interface
 //
-extern ***REMOVED***C***REMOVED*** {
+extern "C" {
 static PyObject *Init(PyObject *self, PyObject *args);
 
 static PyObject *CreateSessionAndGenerateRequest(PyObject *self,
@@ -48,50 +48,50 @@ static PyObject *DiagnosticsOutput(PyObject *self, PyObject *args);
 }
 
 static PyMethodDef kWidevineAdapterMethods[] = {
-    {***REMOVED***Init***REMOVED***, Init, METH_VARARGS,
-     ***REMOVED***Init this module. Must be called always first.***REMOVED***},
+    {"Init", Init, METH_VARARGS,
+     "Init this module. Must be called always first."},
 
-    {***REMOVED***CreateSessionAndGenerateRequest***REMOVED***, CreateSessionAndGenerateRequest,
+    {"CreateSessionAndGenerateRequest", CreateSessionAndGenerateRequest,
      METH_VARARGS,
-     ***REMOVED***cdm::ContentDecryptionModule::CreateSessionAndGenerateRequest.***REMOVED***},
-    {***REMOVED***SetServerCertificate***REMOVED***, SetServerCertificate, METH_VARARGS,
-     ***REMOVED***cdm::ContentDecryptionModule::SetServerCertificate.***REMOVED***},
-    {***REMOVED***GetSessionMessage***REMOVED***, GetSessionMessage, METH_VARARGS,
-     ***REMOVED***Returns cdm::MessageType messageType and message string.***REMOVED***},
-    {***REMOVED***UpdateCurrentSession***REMOVED***, UpdateCurrentSession, METH_VARARGS,
-     ***REMOVED***Updates the session with the retrieved license from the server.***REMOVED***},
-    {***REMOVED***ValidKeyIdsSize***REMOVED***, ValidKeyIdsSize, METH_VARARGS,
-     ***REMOVED***Returns the number of valid key ids available to the cdm.***REMOVED***},
+     "cdm::ContentDecryptionModule::CreateSessionAndGenerateRequest."},
+    {"SetServerCertificate", SetServerCertificate, METH_VARARGS,
+     "cdm::ContentDecryptionModule::SetServerCertificate."},
+    {"GetSessionMessage", GetSessionMessage, METH_VARARGS,
+     "Returns cdm::MessageType messageType and message string."},
+    {"UpdateCurrentSession", UpdateCurrentSession, METH_VARARGS,
+     "Updates the session with the retrieved license from the server."},
+    {"ValidKeyIdsSize", ValidKeyIdsSize, METH_VARARGS,
+     "Returns the number of valid key ids available to the cdm."},
 
-    {***REMOVED***InitStream***REMOVED***, InitStream, METH_VARARGS, ***REMOVED***Initializes a MP4 stream.***REMOVED***},
-    {***REMOVED***StartStream***REMOVED***, StartStream, METH_VARARGS,
-     ***REMOVED***Starts and initialized MP4 stream.***REMOVED***},
-    {***REMOVED***WaitForStream***REMOVED***, WaitForStream, METH_VARARGS,
-     ***REMOVED***Wait till playback of the MP4 stream ended.***REMOVED***},
-    {***REMOVED***StopStream***REMOVED***, StopStream, METH_VARARGS,
-     ***REMOVED***Stops and initialized MP4 stream.***REMOVED***},
+    {"InitStream", InitStream, METH_VARARGS, "Initializes a MP4 stream."},
+    {"StartStream", StartStream, METH_VARARGS,
+     "Starts and initialized MP4 stream."},
+    {"WaitForStream", WaitForStream, METH_VARARGS,
+     "Wait till playback of the MP4 stream ended."},
+    {"StopStream", StopStream, METH_VARARGS,
+     "Stops and initialized MP4 stream."},
 
-    {***REMOVED***StopPlayback***REMOVED***, StopPlayback, METH_VARARGS,
-     ***REMOVED***Stops the playback of audio and video.***REMOVED***},
-    {***REMOVED***ResumePlayback***REMOVED***, ResumePlayback, METH_VARARGS,
-     ***REMOVED***Resumes the playback of audio and video.***REMOVED***},
+    {"StopPlayback", StopPlayback, METH_VARARGS,
+     "Stops the playback of audio and video."},
+    {"ResumePlayback", ResumePlayback, METH_VARARGS,
+     "Resumes the playback of audio and video."},
 
-    {***REMOVED***Close***REMOVED***, Close, METH_VARARGS, ***REMOVED***Close the widevine adapter.***REMOVED***},
+    {"Close", Close, METH_VARARGS, "Close the widevine adapter."},
 
-    {***REMOVED***GetCdmVersion***REMOVED***, GetCdmVersionPyWrapper, METH_VARARGS,
-     ***REMOVED***Diagnostic function to get version of cdm.***REMOVED***},
-    {***REMOVED***SetLogLevel***REMOVED***, SetLogLevelPyWrapper, METH_VARARGS, ***REMOVED***Set logging level.***REMOVED***},
+    {"GetCdmVersion", GetCdmVersionPyWrapper, METH_VARARGS,
+     "Diagnostic function to get version of cdm."},
+    {"SetLogLevel", SetLogLevelPyWrapper, METH_VARARGS, "Set logging level."},
 
-    {***REMOVED***Diagnostics***REMOVED***, DiagnosticsOutput, METH_VARARGS,
-     ***REMOVED***Outpus diagnostics to library internals.***REMOVED***},
+    {"Diagnostics", DiagnosticsOutput, METH_VARARGS,
+     "Outpus diagnostics to library internals."},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
 static struct PyModuleDef kWidevineAdapterModuleDef = {
-    PyModuleDef_HEAD_INIT, ***REMOVED***widevineAdapter***REMOVED***, NULL, -1,
+    PyModuleDef_HEAD_INIT, "widevineAdapter", NULL, -1,
     kWidevineAdapterMethods};
 
-extern ***REMOVED***C***REMOVED*** PyMODINIT_FUNC PyInit_widevineAdapter() {
+extern "C" PyMODINIT_FUNC PyInit_widevineAdapter() {
   PyObject *module = PyModule_Create(&kWidevineAdapterModuleDef);
   return module;
 }
@@ -102,8 +102,8 @@ extern ***REMOVED***C***REMOVED*** PyMODINIT_FUNC PyInit_widevineAdapter() {
 static AdapterInterface interface_;
 
 static PyObject *Init(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***Init called.***REMOVED***);
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***) || !interface_.Init()) {
+  DEBUG_PRINT("Init called.");
+  if (!PyArg_ParseTuple(args, "") || !interface_.Init()) {
     return nullptr;
   }
 
@@ -112,7 +112,7 @@ static PyObject *Init(PyObject *self, PyObject *args) {
 }
 
 static PyObject *Close(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 
@@ -124,18 +124,18 @@ static PyObject *Close(PyObject *self, PyObject *args) {
 
 static PyObject *CreateSessionAndGenerateRequest(PyObject *self,
                                                  PyObject *args) {
-  DEBUG_PRINT(***REMOVED***CreateSessionAndGenerateRequest called***REMOVED***);
+  DEBUG_PRINT("CreateSessionAndGenerateRequest called");
   const char *initData;
   Py_ssize_t initDataSize;
   int type;
-  if (!PyArg_ParseTuple(args, ***REMOVED***s#i***REMOVED***, &initData, &initDataSize, &type)) {
+  if (!PyArg_ParseTuple(args, "s#i", &initData, &initDataSize, &type)) {
     return nullptr;
   }
 
   // some additional error handling
-  if (initDataSize < 8 || strcmp(&initData[4], ***REMOVED***pssh***REMOVED***) != 0) {
-    ERROR_PRINT(***REMOVED***Wrong usage of api: Init data in correct format must be given ***REMOVED***
-                ***REMOVED***(including pssh string, cmd's uuid, etc.)***REMOVED***);
+  if (initDataSize < 8 || strcmp(&initData[4], "pssh") != 0) {
+    ERROR_PRINT("Wrong usage of api: Init data in correct format must be given "
+                "(including pssh string, cmd's uuid, etc.)");
     return nullptr;
   }
 
@@ -150,10 +150,10 @@ static PyObject *CreateSessionAndGenerateRequest(PyObject *self,
 }
 
 static PyObject *SetServerCertificate(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***SetServerCertificate called.***REMOVED***);
+  DEBUG_PRINT("SetServerCertificate called.");
   const char *serverCertificate;
   Py_ssize_t serverCertificateSize;
-  if (!PyArg_ParseTuple(args, ***REMOVED***s#***REMOVED***, &serverCertificate,
+  if (!PyArg_ParseTuple(args, "s#", &serverCertificate,
                         &serverCertificateSize)) {
     return nullptr;
   }
@@ -167,23 +167,23 @@ static PyObject *SetServerCertificate(PyObject *self, PyObject *args) {
 }
 
 static PyObject *GetSessionMessage(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***GetSessionMessage called***REMOVED***);
+  DEBUG_PRINT("GetSessionMessage called");
   int type;
-  if (!PyArg_ParseTuple(args, ***REMOVED***i***REMOVED***, &type)) {
+  if (!PyArg_ParseTuple(args, "i", &type)) {
     return nullptr;
   }
 
   std::string msg = interface_.GetSessionMessage(
       static_cast<AdapterInterface::STREAM_TYPE>(type));
-  return Py_BuildValue(***REMOVED***y#***REMOVED***, msg.c_str(), (Py_ssize_t)msg.size());
+  return Py_BuildValue("y#", msg.c_str(), (Py_ssize_t)msg.size());
 }
 
 static PyObject *UpdateCurrentSession(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***UpdateCurrentSession called***REMOVED***);
+  DEBUG_PRINT("UpdateCurrentSession called");
   const char *serverResponseData;
   Py_ssize_t serverResponseDataSize;
   int type;
-  if (!PyArg_ParseTuple(args, ***REMOVED***s#i***REMOVED***, &serverResponseData,
+  if (!PyArg_ParseTuple(args, "s#i", &serverResponseData,
                         &serverResponseDataSize, &type)) {
     return nullptr;
   }
@@ -197,7 +197,7 @@ static PyObject *UpdateCurrentSession(PyObject *self, PyObject *args) {
 }
 
 static PyObject *InitStream(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***InitStream called***REMOVED***);
+  DEBUG_PRINT("InitStream called");
   const char *videoUrl;
   Py_ssize_t videoUrlSize;
   std::vector<std::string> videoRangeList;
@@ -214,12 +214,12 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
   const char *audioInitData;
   Py_ssize_t audioInitDataSize;
 
-  if (!PyArg_ParseTuple(args, ***REMOVED***s#Os#s#s#Os#***REMOVED***, &videoUrl, &videoUrlSize,
+  if (!PyArg_ParseTuple(args, "s#Os#s#s#Os#", &videoUrl, &videoUrlSize,
                         &videoListObj, &videoInitData, &videoInitDataSize,
                         &videoCodecPrivateData, &videoCodecPrivateDataSize,
                         &audioUrl, &audioUrlSize, &audioListObj, &audioInitData,
                         &audioInitDataSize)) {
-    ERROR_PRINT(***REMOVED***InitStream: Paring input data failed.***REMOVED***);
+    ERROR_PRINT("InitStream: Paring input data failed.");
     return nullptr;
   }
 
@@ -227,7 +227,7 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
   // https://docs.python.org/3/c-api/unicode.html
   PyObject *iter = PyObject_GetIter(videoListObj);
   if (!iter) {
-    ERROR_PRINT(***REMOVED***Allocating videoListObj iterator failed.***REMOVED***);
+    ERROR_PRINT("Allocating videoListObj iterator failed.");
     return nullptr;
   }
   while (true) {
@@ -236,7 +236,7 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
       // nothing left in the iterator
       break;
     }
-    PyObject *str = PyUnicode_AsEncodedString(next, ***REMOVED***utf-8***REMOVED***, ***REMOVED***Error ~***REMOVED***);
+    PyObject *str = PyUnicode_AsEncodedString(next, "utf-8", "Error ~");
     const char *range = PyBytes_AS_STRING(str);
     videoRangeList.push_back(std::string(range));
   }
@@ -244,7 +244,7 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
   // do same for audio range list
   iter = PyObject_GetIter(audioListObj);
   if (!iter) {
-    ERROR_PRINT(***REMOVED***Allocating audioListObj iterator failed.***REMOVED***);
+    ERROR_PRINT("Allocating audioListObj iterator failed.");
     return nullptr;
   }
   while (true) {
@@ -253,7 +253,7 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
       // nothing left in the iterator
       break;
     }
-    PyObject *str = PyUnicode_AsEncodedString(next, ***REMOVED***utf-8***REMOVED***, ***REMOVED***Error ~***REMOVED***);
+    PyObject *str = PyUnicode_AsEncodedString(next, "utf-8", "Error ~");
     const char *range = PyBytes_AS_STRING(str);
     audioRangeList.push_back(std::string(range));
   }
@@ -267,11 +267,11 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
           videoCodecPrivateDataSize, audioUrlStr, audioRangeList,
           reinterpret_cast<const uint8_t *>(audioInitData),
           audioInitDataSize)) {
-    ERROR_PRINT(***REMOVED***Interface InitStream failed.***REMOVED***);
+    ERROR_PRINT("Interface InitStream failed.");
     return nullptr;
   }
 
-  DEBUG_PRINT(***REMOVED***InitStream was successful.***REMOVED***);
+  DEBUG_PRINT("InitStream was successful.");
   // DEBUG_PRINT_ITERABLE(videoRangeList);
 
   Py_INCREF(Py_None);
@@ -279,8 +279,8 @@ static PyObject *InitStream(PyObject *self, PyObject *args) {
 }
 
 static PyObject *StartStream(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***StartStream called***REMOVED***);
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  DEBUG_PRINT("StartStream called");
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 
@@ -293,8 +293,8 @@ static PyObject *StartStream(PyObject *self, PyObject *args) {
 }
 
 static PyObject *WaitForStream(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***WaitforStream called***REMOVED***);
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  DEBUG_PRINT("WaitforStream called");
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 
@@ -305,8 +305,8 @@ static PyObject *WaitForStream(PyObject *self, PyObject *args) {
 }
 
 static PyObject *StopStream(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***StopStream called***REMOVED***);
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  DEBUG_PRINT("StopStream called");
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 
@@ -317,7 +317,7 @@ static PyObject *StopStream(PyObject *self, PyObject *args) {
 }
 
 static PyObject *StopPlayback(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 
@@ -328,7 +328,7 @@ static PyObject *StopPlayback(PyObject *self, PyObject *args) {
 }
 
 static PyObject *ResumePlayback(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 
@@ -339,25 +339,25 @@ static PyObject *ResumePlayback(PyObject *self, PyObject *args) {
 }
 
 static PyObject *ValidKeyIdsSize(PyObject *self, PyObject *args) {
-  DEBUG_PRINT(***REMOVED***ValidKeyIdsSize called***REMOVED***);
+  DEBUG_PRINT("ValidKeyIdsSize called");
   int type;
-  if (!PyArg_ParseTuple(args, ***REMOVED***i***REMOVED***, &type)) {
+  if (!PyArg_ParseTuple(args, "i", &type)) {
     return nullptr;
   }
 
   int validKeyIds = interface_.ValidKeyIdsSize(
       static_cast<AdapterInterface::STREAM_TYPE>(type));
-  return Py_BuildValue(***REMOVED***i***REMOVED***, validKeyIds);
+  return Py_BuildValue("i", validKeyIds);
 }
 
 static PyObject *GetCdmVersionPyWrapper(PyObject *self, PyObject *args) {
   const char *cdmVersion = interface_.GetCdmVersion();
-  return Py_BuildValue(***REMOVED***s***REMOVED***, cdmVersion);
+  return Py_BuildValue("s", cdmVersion);
 }
 
 static PyObject *SetLogLevelPyWrapper(PyObject *self, PyObject *args) {
   int logLevel;
-  if (!PyArg_ParseTuple(args, ***REMOVED***i***REMOVED***, &logLevel)) {
+  if (!PyArg_ParseTuple(args, "i", &logLevel)) {
     return nullptr;
   }
 
@@ -384,7 +384,7 @@ static PyObject *SetLogLevelPyWrapper(PyObject *self, PyObject *args) {
 }
 
 static PyObject *DiagnosticsOutput(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, ***REMOVED******REMOVED***)) {
+  if (!PyArg_ParseTuple(args, "")) {
     return nullptr;
   }
 

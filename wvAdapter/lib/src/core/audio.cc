@@ -1,10 +1,10 @@
-#include ***REMOVED***audio.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***util.h***REMOVED***
+#include "audio.h"
+#include "assertion.h"
+#include "util.h"
 
 #include <thread>
 
-extern ***REMOVED***C***REMOVED*** {
+extern "C" {
 // libav headers
 // e.g. found in Arch/Manjaro Linux under /usr/include/libavformat/
 #include <libavcodec/avcodec.h>
@@ -13,7 +13,7 @@ extern ***REMOVED***C***REMOVED*** {
 }
 
 // this pulls in all required dependencies
-#include ***REMOVED***components.h***REMOVED***
+#include "components.h"
 
 #ifdef RASPBERRY_PI
   #include <chrono>
@@ -49,7 +49,7 @@ void DemuxAudioThread::Impl::Start(const std::string &name) {
 void DemuxAudioThread::Impl::Run() {
   logging::addThreadIdNameMapping(std::this_thread::get_id(), name_.c_str());
 
-  INFO_PRINT(***REMOVED***Starting demux audio thread...***REMOVED***);
+  INFO_PRINT("Starting demux audio thread...");
   bool ret;
 
   while (isRunning_) {
@@ -65,7 +65,7 @@ void DemuxAudioThread::Impl::Run() {
       auto *newRawData = new uint8_t[newSize];
       uint8_t *currPtrNew = newRawData;
       uint8_t *currPtr = sample->mdatRawData;
-      // DEBUG_PRINT(***REMOVED***Processing # ***REMOVED*** << sample.sampleCount << ***REMOVED*** samples.***REMOVED***);
+      // DEBUG_PRINT("Processing # " << sample.sampleCount << " samples.");
       for (size_t i = 0; i < sample->sampleCount; i++) {
         uint32_t sampleSize = sample->sampleSizes[i];
         currPtrNew = stream_->BuildAdtsHeader(currPtrNew, sampleSize);
@@ -74,7 +74,7 @@ void DemuxAudioThread::Impl::Run() {
         memcpy(currPtrNew, currPtr, sampleSize);
         currPtrNew += sampleSize;
         currPtr += sampleSize;
-        // DEBUG_PRINT(***REMOVED***Sample # ***REMOVED*** << i << ***REMOVED*** processed.***REMOVED***);
+        // DEBUG_PRINT("Sample # " << i << " processed.");
       }
 
       sample->mdatRawData = newRawData;
@@ -86,7 +86,7 @@ void DemuxAudioThread::Impl::Run() {
     output_->push(std::move(sample));
   }
 
-  INFO_PRINT(***REMOVED***Finishing demux audio thread***REMOVED***);
+  INFO_PRINT("Finishing demux audio thread");
 }
 
 DemuxAudioThread::DemuxAudioThread() : pImpl_(new DemuxAudioThread::Impl()) {}
@@ -153,7 +153,7 @@ void DecodeAudioThread::Impl::Start(const std::string &name) {
   // NOTE AAC is hard coded for now
   codec_ = avcodec_find_decoder(AV_CODEC_ID_AAC);
   if (!codec_) {
-    ERROR_PRINT(***REMOVED***Could not find AAC codec.***REMOVED***);
+    ERROR_PRINT("Could not find AAC codec.");
     return;
   }
   avCtx_ = avcodec_alloc_context3(codec_);
@@ -163,13 +163,13 @@ void DecodeAudioThread::Impl::Start(const std::string &name) {
   // avCtx_->extradata = stream->GetDecoderSpecificInfo();
   // avCtx_->extradata_size = stream->GetDecoderSpecificInfoSize();
 
-  DEBUG_PRINT(***REMOVED***Using AAC codec with ***REMOVED***
-                  << avCtx_->channels << ***REMOVED*** channels and ***REMOVED*** << avCtx_->sample_rate
-                  << ***REMOVED*** sample rate and number of samples (frame_size): ***REMOVED***
+  DEBUG_PRINT("Using AAC codec with "
+                  << avCtx_->channels << " channels and " << avCtx_->sample_rate
+                  << " sample rate and number of samples (frame_size): "
                   << avCtx_->frame_size);
   int ret = avcodec_open2(avCtx_, codec_, NULL);
   if (ret < 0) {
-    ERROR_PRINT(***REMOVED***avcodec_open2 failed with code ***REMOVED*** << ret);
+    ERROR_PRINT("avcodec_open2 failed with code " << ret);
     ASSERT(false);
   }
 
@@ -181,12 +181,12 @@ void DecodeAudioThread::Impl::Start(const std::string &name) {
 void DecodeAudioThread::Impl::Run() {
   logging::addThreadIdNameMapping(std::this_thread::get_id(), name_.c_str());
 
-  INFO_PRINT(***REMOVED***Starting decode audio thread...***REMOVED***);
+  INFO_PRINT("Starting decode audio thread...");
 
   AVFrame *decodedFrame = av_frame_alloc();
   while (isRunning_) {
     auto sample = input_->pop();
-    // DEBUG_PRINT(***REMOVED***Processing next DEMUXED_SAMPLE...***REMOVED***);
+    // DEBUG_PRINT("Processing next DEMUXED_SAMPLE...");
     AVPacket avPacket;
     av_init_packet(&avPacket);
     avPacket.size = sample.size;
@@ -197,14 +197,14 @@ void DecodeAudioThread::Impl::Run() {
     if (ret == AVERROR(EAGAIN)) {
       // TODO how to handle this correctly ??
       ERROR_PRINT(
-          ***REMOVED***avcodec_send_packet failed with AVERROR(EAGAIN)). Skipping packet.***REMOVED***);
+          "avcodec_send_packet failed with AVERROR(EAGAIN)). Skipping packet.");
       goto wend;
     }
     if (ret < 0) {
       char errbuf[AV_ERROR_MAX_STRING_SIZE];
       av_strerror(ret, errbuf, AV_ERROR_MAX_STRING_SIZE);
-      ERROR_PRINT(***REMOVED***avcodec_send_packet failed with '***REMOVED*** << errbuf
-                                                      << ***REMOVED***'. Skipping packet.***REMOVED***);
+      ERROR_PRINT("avcodec_send_packet failed with '" << errbuf
+                                                      << "'. Skipping packet.");
 
       ASSERT(false);
       break;
@@ -219,8 +219,8 @@ void DecodeAudioThread::Impl::Run() {
           // decoder may change it.
           // see e.g.
           // https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/aacdec_template.c#L3265
-          INFO_PRINT(***REMOVED***Samping rate has changed to ***REMOVED*** << decodedFrame->sample_rate
-                                                    << ***REMOVED***. Updating...***REMOVED***);
+          INFO_PRINT("Samping rate has changed to " << decodedFrame->sample_rate
+                                                    << ". Updating...");
           stream_->SetSamplingRate(decodedFrame->sample_rate);
           AudioRendererConfig cfg;
           cfg.channels = stream_->GetChannels();
@@ -241,9 +241,9 @@ void DecodeAudioThread::Impl::Run() {
 
         if (decodedFrame->format != AV_SAMPLE_FMT_FLTP) {
           ERROR_PRINT(
-              ***REMOVED***The given format ***REMOVED***
+              "The given format "
                   << av_get_sample_fmt_name((AVSampleFormat)decodedFrame->format)
-                  << ***REMOVED*** is not supported. ***REMOVED*** AV_SAMPLE_FMT_FLTP!***REMOVED***);
+                  << " is not supported. Only AV_SAMPLE_FMT_FLTP!");
           ASSERT(false);
         }
 
@@ -285,7 +285,7 @@ void DecodeAudioThread::Impl::Run() {
   }
   av_frame_free(&decodedFrame);
 
-  DEBUG_PRINT(***REMOVED***Stopping decode audio thread...***REMOVED***);
+  DEBUG_PRINT("Stopping decode audio thread...");
 }
 
 DecodeAudioThread::DecodeAudioThread() : pImpl_(new DecodeAudioThread::Impl()) {}
@@ -339,11 +339,11 @@ void DecryptAudioThread::Impl::Start() {
 // NOTE: decrypt and decode audio
 // For decrypt only see widevineDecryptor::WidevineDecryptorThread
 void DecryptAudioThread::Impl::Run() {
-  INFO_PRINT(***REMOVED***Starting DecryptAudio thread ...***REMOVED***);
+  INFO_PRINT("Starting DecryptAudio thread ...");
 
   // TODO implement this when required ...
 
-  INFO_PRINT(***REMOVED***DecryptAudio thread finished ...***REMOVED***);
+  INFO_PRINT("DecryptAudio thread finished ...");
 }
 
 DecryptAudioThread::DecryptAudioThread() : pImpl_(new DecryptAudioThread::Impl()) {}
@@ -391,7 +391,7 @@ void AudioThread::Impl::Start(const std::string &name) {
 void AudioThread::Impl::Run() {
   logging::addThreadIdNameMapping(std::this_thread::get_id(), name_.c_str());
 
-  INFO_PRINT(***REMOVED***Starting render audio thread...***REMOVED***);
+  INFO_PRINT("Starting render audio thread...");
 
   while (isRunning_) {
 #ifdef RASPBERRY_PI
@@ -401,12 +401,12 @@ void AudioThread::Impl::Run() {
     clock_->SetStartTime(Clock::MEDIA_TYPE::AUDIO);
     AUDIO_FRAME frame = input_->pop();
     // DEBUG_PRINT(
-    //    ***REMOVED***Rendering next frame: audio frame queue.size=***REMOVED*** << input_->size());
+    //    "Rendering next frame: audio frame queue.size=" << input_->size());
 
     audioRenderer_->Render(&frame);
 
 #ifndef RASPBERRY_PI
-    // DEBUG_PRINT(***REMOVED***Syncing with frame duration: ***REMOVED*** << frame.frameDuration);
+    // DEBUG_PRINT("Syncing with frame duration: " << frame.frameDuration);
     clock_->Sync(frame.frameDuration);
 #endif // RASPBERRY_PI
     // clean up to prevent memory leak
@@ -418,14 +418,14 @@ void AudioThread::Impl::Run() {
     std::chrono::duration<double> diff = currTime - startTime;
     double timeToSleepDbl = frame.frameDuration - diff.count();
     int timeToSleepMicros = timeToSleepDbl * 1000000;
-    // INFO_PRINT(***REMOVED***Sleeping for ***REMOVED*** << timeToSleepMicros << ***REMOVED*** microseconds.***REMOVED***);
+    // INFO_PRINT("Sleeping for " << timeToSleepMicros << " microseconds.");
     std::this_thread::sleep_for(std::chrono::microseconds(timeToSleepMicros));
 
     clock_->UpdateAudioTime(frame.frameDuration);
 #endif // RASPBERRY_PI
   }
 
-  INFO_PRINT(***REMOVED***Finishing render audio thread***REMOVED***);
+  INFO_PRINT("Finishing render audio thread");
 }
 
 AudioThread::AudioThread() : pImpl_(new AudioThread::Impl()) {}

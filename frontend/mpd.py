@@ -3,17 +3,17 @@ def prettyPrintList(lst):
     ret = str(lst)
     lenLst = len(lst)
     if lenLst > 5:
-        ret = ***REMOVED***(len={0})<data ommited>***REMOVED***.format(lenLst)
+        ret = "(len={0})<data ommited>".format(lenLst)
     return ret
 
 
 class AdaptionSet(object):
     def __init__(self):
         # e.g. 'audio' or 'video'
-        self._contentType = ***REMOVED******REMOVED***
-        self._mimeType = ***REMOVED******REMOVED***
-        self._lang = ***REMOVED******REMOVED***    # only relevant for audio
-        self._format = ***REMOVED******REMOVED***  # only for video, e.g. 16:9
+        self._contentType = ""
+        self._mimeType = ""
+        self._lang = ""    # only relevant for audio
+        self._format = ""  # only for video, e.g. 16:9
         self._widevineContentProt = None
         self._playReadyContentProt = None
         self._representationLst = []
@@ -73,26 +73,26 @@ class AdaptionSet(object):
         self._representationLst.append(value)
 
     def __str__(self):
-        if self._contentType == ***REMOVED***video***REMOVED***:
-            part = ***REMOVED***format={0}***REMOVED***.format(self._format)
-        elif self._contentType == ***REMOVED***audio***REMOVED***:
-            part = ***REMOVED***language={0}***REMOVED***.format(self._lang)
+        if self._contentType == "video":
+            part = "format={0}".format(self._format)
+        elif self._contentType == "audio":
+            part = "language={0}".format(self._lang)
         else:
-            part = ***REMOVED******REMOVED***
+            part = ""
 
         strLst = [x.__str__() for x in self._representationLst]
-        representationLstStr = ***REMOVED***\n    ***REMOVED***.join(strLst)
+        representationLstStr = "\n    ".join(strLst)
 
-        return ***REMOVED***AdaptionSet( contentType={0}, mimeType={1}, {2}, widevineContentProtection={3}, ***REMOVED*** \
-          ***REMOVED***playReadyContentProtection={4}, representationLst=\n    {5} )***REMOVED*** \
+        return "AdaptionSet( contentType={0}, mimeType={1}, {2}, widevineContentProtection={3}, " \
+          "playReadyContentProtection={4}, representationLst=\n    {5} )" \
           .format(self._contentType, self._mimeType, part, self._widevineContentProt,
           self._playReadyContentProt, representationLstStr)
 
 
 class ContentProtection(object):
     def __init__(self):
-        self._schemeIdUri = ***REMOVED******REMOVED***
-        self._cencPsshData = ***REMOVED******REMOVED***
+        self._schemeIdUri = ""
+        self._cencPsshData = ""
 
     @property
     def schemeIdUri(self):
@@ -120,7 +120,7 @@ class Mpd(object):
         return self._adaptionSetLst
 
     def addAdaptionSet(self, value):
-        print(***REMOVED***add adaptionset: %s***REMOVED*** % value)
+        print("add adaptionset: %s" % value)
         self._adaptionSetLst.append(value)
 
     def getFirstWidevineContentProt(self):
@@ -129,7 +129,7 @@ class Mpd(object):
                 return aSet.widevineContentProtection
         return None
 
-    def getWidevineContentProt(self, contentType=***REMOVED***video***REMOVED***, adaptionSet=0):
+    def getWidevineContentProt(self, contentType="video", adaptionSet=0):
         wvContentProt = None
         idx = 0
         for aSet in self._adaptionSetLst:
@@ -147,7 +147,7 @@ class Mpd(object):
                 return aSet.playReadyContentProtection
         return None
 
-    def getPlayReadyContentProt(self, contentType=***REMOVED***video***REMOVED***, adaptionSet=0):
+    def getPlayReadyContentProt(self, contentType="video", adaptionSet=0):
         prContentProt = None
         idx = 0
         for aSet in self._adaptionSetLst:
@@ -161,15 +161,15 @@ class Mpd(object):
 
     def __str__(self):
         strLst = [x.__str__() for x in self._adaptionSetLst]
-        adaptionSetLstStr = ***REMOVED***\n  ***REMOVED***.join(strLst)
-        return ***REMOVED***Mpd( adaptionSetLst=\n  {0} )***REMOVED***.format(adaptionSetLstStr)
+        adaptionSetLstStr = "\n  ".join(strLst)
+        return "Mpd( adaptionSetLst=\n  {0} )".format(adaptionSetLstStr)
 
 
 class SegmentList(object):
     def __init__(self):
         self._duration = 0
         self._timescale = 0
-        self._initRange = ***REMOVED******REMOVED***
+        self._initRange = ""
         self._mediaRangeLst = []
 
     @property
@@ -206,16 +206,16 @@ class SegmentList(object):
     def __str__(self):
         mediaRangeLstStr = prettyPrintList(self._mediaRangeLst)
 
-        return ***REMOVED***SegmentList( duration={0}, timescale={1}, initRange={2}, mediaRangeLst={3} )***REMOVED*** \
+        return "SegmentList( duration={0}, timescale={1}, initRange={2}, mediaRangeLst={3} )" \
             .format(self._duration, self._timescale, self._initRange, mediaRangeLstStr)
 
 
 class Representation(object):
     def __init__(self):
-        self._mediaFileUrl = ***REMOVED******REMOVED***
+        self._mediaFileUrl = ""
         self._segmentList = None
-        self._initData = ***REMOVED******REMOVED***
-        self._codecPrivateData = ***REMOVED******REMOVED***
+        self._initData = ""
+        self._codecPrivateData = ""
 
     @property
     def mediaFileUrl(self):
@@ -271,7 +271,7 @@ class VideoRepresentation(Representation):
         self._height = int(value)
 
     def __str__(self):
-        return ***REMOVED***VideoRepresentation( {0} x {1},  mediaFileUrl={2}, segmentList={3})***REMOVED*** \
+        return "VideoRepresentation( {0} x {1},  mediaFileUrl={2}, segmentList={3})" \
             .format(self._width, self._height,
             self.mediaFileUrl, self.segmentList)
 
@@ -297,6 +297,6 @@ class AudioRepresentation(Representation):
         self._bandwidth = value
 
     def __str__(self):
-        return ***REMOVED***AudioRepresentation( samplingRate={0}, bandwidth={1},  mediaFileUrl={2}, segmentList={3})***REMOVED*** \
+        return "AudioRepresentation( samplingRate={0}, bandwidth={1},  mediaFileUrl={2}, segmentList={3})" \
             .format(self._samplingRate, self._bandwidth,
             self.mediaFileUrl, self.segmentList)

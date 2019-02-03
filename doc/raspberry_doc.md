@@ -7,7 +7,7 @@ sudo /opt/vc/bin/vcdbg reloc
 
 ### View log messages from videocore
 
-- see ***REMOVED***Raspberry Pi GPU Audio Video Programming***REMOVED*** book p. 261
+- see "Raspberry Pi GPU Audio Video Programming" book p. 261
 
 sudo /opt/vc/bin/vcgencmd cache_flush
 sudo /opt/vc/bin/vcgencmd set_logging level=0x40

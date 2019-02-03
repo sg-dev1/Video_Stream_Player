@@ -1,10 +1,10 @@
 #ifndef WIDEVINE_DECRYPTOR_H_
 #define WIDEVINE_DECRYPTOR_H_
 
-#include ***REMOVED***content_decryption_module.h***REMOVED***
-#include ***REMOVED***mp4_stream.h***REMOVED*** // DEMUXED_SAMPLE, MP4Stream
+#include "content_decryption_module.h"
+#include "mp4_stream.h" // DEMUXED_SAMPLE, MP4Stream
 
-#include ***REMOVED***common.h***REMOVED***
+#include "common.h"
 
 #include <string>
 #include <vector>

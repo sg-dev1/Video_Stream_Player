@@ -1,6 +1,6 @@
-#include ***REMOVED***widevineAdapter.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***widevineDecryptor.h***REMOVED***
+#include "widevineAdapter.h"
+#include "logging.h"
+#include "widevineDecryptor.h"
 
 // required by dlopen & co
 #include <dlfcn.h>
@@ -14,14 +14,14 @@
 bool WidevineAdapter::Init() {
   libwidevine_ = dlopen(libpath_.c_str(), RTLD_NOW | RTLD_GLOBAL);
   if (libwidevine_ == nullptr) {
-    ERROR_PRINT(***REMOVED***dlopen ***REMOVED*** << libpath_ << ***REMOVED*** failed with ***REMOVED*** << dlerror());
+    ERROR_PRINT("dlopen " << libpath_ << " failed with " << dlerror());
     return false;
   }
 
   auto initCdmModule = reinterpret_cast<decltype(::INITIALIZE_CDM_MODULE) *>(
       dlsym(libwidevine_, STRINGIFY(INITIALIZE_CDM_MODULE)));
   if (!initCdmModule) {
-    ERROR_PRINT(***REMOVED***dlysm ***REMOVED*** << STRINGIFY(INITIALIZE_CDM_MODULE) << ***REMOVED*** failed***REMOVED***);
+    ERROR_PRINT("dlysm " << STRINGIFY(INITIALIZE_CDM_MODULE) << " failed");
     return false;
   }
 
@@ -38,8 +38,8 @@ bool WidevineAdapter::Init() {
 }
 
 static void *GetCdmHost(int aHostInterfaceVersion, void *aUserData) {
-  INFO_PRINT(***REMOVED***GetCdmHost() called with aHostInterfaceVersion=***REMOVED***
-             << aHostInterfaceVersion << ***REMOVED*** and data=***REMOVED*** << aUserData);
+  INFO_PRINT("GetCdmHost() called with aHostInterfaceVersion="
+             << aHostInterfaceVersion << " and data=" << aUserData);
 
   WidevineAdapter *decryptor = reinterpret_cast<WidevineAdapter *>(aUserData);
 
@@ -48,22 +48,22 @@ static void *GetCdmHost(int aHostInterfaceVersion, void *aUserData) {
 
 cdm::ContentDecryptionModule *WidevineAdapter::CreateCdmInstance() {
   auto createCdmInstance = reinterpret_cast<decltype(::CreateCdmInstance) *>(
-      dlsym(libwidevine_, ***REMOVED***CreateCdmInstance***REMOVED***));
+      dlsym(libwidevine_, "CreateCdmInstance"));
   if (!createCdmInstance) {
-    ERROR_PRINT(***REMOVED***dlysm CreateCdmInstance failed***REMOVED***);
+    ERROR_PRINT("dlysm CreateCdmInstance failed");
     return nullptr;
   }
 
   // Value com.widevine.alpha found out at http://www.codelive.cn/?id=10
   cdm::ContentDecryptionModule *cdm =
       reinterpret_cast<cdm::ContentDecryptionModule *>(createCdmInstance(
-          cdm::ContentDecryptionModule::kVersion, ***REMOVED***com.widevine.alpha***REMOVED***,
-          18 /*size of ***REMOVED***com.widevine.alpha***REMOVED****/, &GetCdmHost, this));
+          cdm::ContentDecryptionModule::kVersion, "com.widevine.alpha",
+          18 /*size of "com.widevine.alpha"*/, &GetCdmHost, this));
   if (!cdm) {
-    ERROR_PRINT(***REMOVED***Calling createCdmInstance failed***REMOVED***);
+    ERROR_PRINT("Calling createCdmInstance failed");
     return nullptr;
   }
-  INFO_PRINT(***REMOVED***WidevineAdapter::CreateCdmInstance successful for adapter ***REMOVED***
+  INFO_PRINT("WidevineAdapter::CreateCdmInstance successful for adapter "
              << this);
 
   return cdm;
@@ -77,18 +77,18 @@ void WidevineAdapter::Shutdown() {
   cdm_->CloseSession(0, cdmSessionId_.c_str(), cdmSessionId_.size());
   cdm_->Destroy();
   messageValid_ = false;
-  message_ = ***REMOVED******REMOVED***;
-  cdmSessionId_ = ***REMOVED******REMOVED***;
+  message_ = "";
+  cdmSessionId_ = "";
   validKeyIds_.clear();
   cdm_ = nullptr;
 
   decltype(::DeinitializeCdmModule) *deinit;
   deinit = reinterpret_cast<decltype(deinit)>(
-      dlsym(libwidevine_, ***REMOVED***DeinitializeCdmModule***REMOVED***));
+      dlsym(libwidevine_, "DeinitializeCdmModule"));
   if (deinit) {
     deinit();
   } else {
-    WARN_PRINT(***REMOVED***dlsym DeinitializeCdmModule failed***REMOVED***);
+    WARN_PRINT("dlsym DeinitializeCdmModule failed");
   }
 
   dlclose(libwidevine_);
@@ -97,17 +97,17 @@ void WidevineAdapter::Shutdown() {
 
 const char *WidevineAdapter::GetCdmVersion() {
   if (libwidevine_ == nullptr) {
-    return ***REMOVED******REMOVED***;
+    return "";
   }
 
   decltype(::GetCdmVersion) *getCdmVersion;
   getCdmVersion = reinterpret_cast<decltype(getCdmVersion)>(
-      dlsym(libwidevine_, ***REMOVED***GetCdmVersion***REMOVED***));
+      dlsym(libwidevine_, "GetCdmVersion"));
   if (getCdmVersion) {
     return getCdmVersion();
   } else {
-    WARN_PRINT(***REMOVED***dlsym GetCdmVersion failed***REMOVED***);
-    return ***REMOVED******REMOVED***;
+    WARN_PRINT("dlsym GetCdmVersion failed");
+    return "";
   }
 }
 
@@ -145,17 +145,17 @@ cdm::Status WidevineAdapter::InitCdmVideoDecoder(
   videoCfg.extra_data = extraData;
   videoCfg.extra_data_size = extraDataSize;
 
-  printf(***REMOVED***[INFO](widevineAdapter-pythonInterface) Init video decoder data: ***REMOVED***
-         ***REMOVED***codec:%d, profile:%d, format:%d, Size: (%d ***REMOVED***
-         ***REMOVED***x %d) \n***REMOVED***,
+  printf("[INFO](widevineAdapter-pythonInterface) Init video decoder data: "
+         "codec:%d, profile:%d, format:%d, Size: (%d "
+         "x %d) \n",
          videoCfg.codec, videoCfg.profile, videoCfg.format,
          videoCfg.coded_size.width, videoCfg.coded_size.height);
-  PRINT_BYTE_ARRAY(***REMOVED***videoCfg.extra_data***REMOVED***, videoCfg.extra_data,
+  PRINT_BYTE_ARRAY("videoCfg.extra_data", videoCfg.extra_data,
                    videoCfg.extra_data_size);
 
   cdm::Status ret = cdm_->InitializeVideoDecoder(videoCfg);
   if (ret != cdm::Status::kSuccess) {
-    ERROR_PRINT(***REMOVED***CDM InitializeVideoDecoder failed with ***REMOVED*** << ret);
+    ERROR_PRINT("CDM InitializeVideoDecoder failed with " << ret);
   }
 
   return ret;
@@ -174,14 +174,14 @@ cdm::Status WidevineAdapter::InitCdmAudioDecoder(
   cfg.extra_data = extraData;
   cfg.extra_data_size = extraDataSize;
 
-  INFO_PRINT(***REMOVED***Initializing audio decoder with AAC codec, channels=***REMOVED***
+  INFO_PRINT("Initializing audio decoder with AAC codec, channels="
              << cfg.channel_count
-             << ***REMOVED***, samples_per_second=***REMOVED*** << cfg.samples_per_second
-             << ***REMOVED***, bits_per_channel=***REMOVED*** << cfg.bits_per_channel);
+             << ", samples_per_second=" << cfg.samples_per_second
+             << ", bits_per_channel=" << cfg.bits_per_channel);
 
   cdm::Status ret = cdm_->InitializeAudioDecoder(cfg);
   if (ret != cdm::Status::kSuccess) {
-    ERROR_PRINT(***REMOVED***CDM InitializeAudioDecoder failed with ***REMOVED*** << ret);
+    ERROR_PRINT("CDM InitializeAudioDecoder failed with " << ret);
   }
 
   return ret;
@@ -228,25 +228,25 @@ void WidevineAdapter::OnResolveNewSessionPromise(uint32_t aPromiseId,
                                                  const char *aSessionId,
                                                  uint32_t aSessionIdSize) {
   if (!cdmSessionId_.empty()) {
-    WARN_PRINT(***REMOVED***Already a session established: ***REMOVED***
-               << cdmSessionId_ << ***REMOVED***! Overwriting session id.***REMOVED***);
+    WARN_PRINT("Already a session established: "
+               << cdmSessionId_ << "! Overwriting session id.");
   }
-  INFO_PRINT(***REMOVED***WidevineDecryptor::OnResolveNewSessionPromise promiseId=***REMOVED***
-             << aPromiseId << ***REMOVED***, aSessionId=***REMOVED*** << aSessionId);
+  INFO_PRINT("WidevineDecryptor::OnResolveNewSessionPromise promiseId="
+             << aPromiseId << ", aSessionId=" << aSessionId);
   cdmSessionId_ = std::string(aSessionId, aSessionIdSize);
 }
 
 void WidevineAdapter::OnResolvePromise(uint32_t aPromiseId) {
-  INFO_PRINT(***REMOVED***WidevineDecryptor::OnResolvePromise promiseId=***REMOVED*** << aPromiseId);
+  INFO_PRINT("WidevineDecryptor::OnResolvePromise promiseId=" << aPromiseId);
 }
 
 void WidevineAdapter::OnRejectPromise(uint32_t aPromiseId, cdm::Error aError,
                                       uint32_t aSystemCode,
                                       const char *aErrorMessage,
                                       uint32_t aErrorMessageSize) {
-  INFO_PRINT(***REMOVED***WidevineDecryptor::OnRejectPromise promiseId=***REMOVED***
-             << aPromiseId << ***REMOVED***, system code=***REMOVED*** << aSystemCode
-             << ***REMOVED***, error: ***REMOVED*** << aError);
+  INFO_PRINT("WidevineDecryptor::OnRejectPromise promiseId="
+             << aPromiseId << ", system code=" << aSystemCode
+             << ", error: " << aError);
 }
 
 void WidevineAdapter::OnSessionMessage(
@@ -263,11 +263,11 @@ void WidevineAdapter::OnSessionMessage(
   //  kLicenseRenewal = 1,
   //  kLicenseRelease = 2
   // };
-  INFO_PRINT(***REMOVED***WidevineDecryptor::OnSessionMessage: aSessionId=***REMOVED***
-             << aSessionId << ***REMOVED***, messageType=***REMOVED*** << aMessageType
-             << ***REMOVED***, aMessageSize=***REMOVED*** << aMessageSize
-             << ***REMOVED***, aLegacyDestinationUrlLength='***REMOVED*** << aLegacyDestinationUrlLength
-             << ***REMOVED***'***REMOVED***);
+  INFO_PRINT("WidevineDecryptor::OnSessionMessage: aSessionId="
+             << aSessionId << ", messageType=" << aMessageType
+             << ", aMessageSize=" << aMessageSize
+             << ", aLegacyDestinationUrlLength='" << aLegacyDestinationUrlLength
+             << "'");
 
   messageType_ = aMessageType;
   message_ = std::string(aMessage, aMessageSize);
@@ -279,10 +279,10 @@ void WidevineAdapter::OnSessionKeysChange(const char *aSessionId,
                                           bool aHasAdditionalUsableKey,
                                           const cdm::KeyInformation *aKeysInfo,
                                           uint32_t aKeysInfoCount) {
-  INFO_PRINT(***REMOVED***WidevineDecryptor::OnSessionKeysChange: aSessionId=***REMOVED***
+  INFO_PRINT("WidevineDecryptor::OnSessionKeysChange: aSessionId="
              << aSessionId
-             << ***REMOVED***, aHasAdditionalUsableKey: ***REMOVED*** << aHasAdditionalUsableKey
-             << ***REMOVED***, cdm::KeyInformation (count): ***REMOVED*** << aKeysInfoCount);
+             << ", aHasAdditionalUsableKey: " << aHasAdditionalUsableKey
+             << ", cdm::KeyInformation (count): " << aKeysInfoCount);
 
   // enum KeyStatus {
   //  kUsable = 0,
@@ -294,13 +294,13 @@ void WidevineAdapter::OnSessionKeysChange(const char *aSessionId,
   //  kReleased = 6
   //};
   for (size_t i = 0; i < aKeysInfoCount; i++) {
-    printf(***REMOVED***cdm::KeyInformation[%zu]: \n***REMOVED***, i);
-    printf(***REMOVED***key-id= 0x***REMOVED***);
+    printf("cdm::KeyInformation[%zu]: \n", i);
+    printf("key-id= 0x");
     for (size_t j = 0; j < aKeysInfo[i].key_id_size; j++) {
-      printf(***REMOVED***%02x***REMOVED***, aKeysInfo[i].key_id[j]);
+      printf("%02x", aKeysInfo[i].key_id[j]);
     }
-    printf(***REMOVED***\n***REMOVED***);
-    printf(***REMOVED***keystatus: %d, system_code: %d \n\n***REMOVED***, aKeysInfo[i].status,
+    printf("\n");
+    printf("keystatus: %d, system_code: %d \n\n", aKeysInfo[i].status,
            aKeysInfo[i].system_code);
 
     if (aKeysInfo[i].status == cdm::KeyStatus::kUsable &&
@@ -317,8 +317,8 @@ void WidevineAdapter::OnSessionKeysChange(const char *aSessionId,
 void WidevineAdapter::OnExpirationChange(const char *aSessionId,
                                          uint32_t aSessionIdSize,
                                          cdm::Time aNewExpiryTime) {
-  INFO_PRINT(***REMOVED***sid=***REMOVED*** << aSessionId
-                    << ***REMOVED***: expiration changed: ***REMOVED*** << aNewExpiryTime);
+  INFO_PRINT("sid=" << aSessionId
+                    << ": expiration changed: " << aNewExpiryTime);
 }
 
 void WidevineAdapter::OnSessionClosed(const char *aSessionId,

@@ -1,16 +1,16 @@
-#include ***REMOVED***networking.h***REMOVED***
+#include "networking.h"
 
-#include ***REMOVED***blocking_stream.h***REMOVED***
-#include ***REMOVED***components.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "blocking_stream.h"
+#include "components.h"
+#include "logging.h"
 
 #include <functional>
 #include <thread>
 #include <curl/curl.h>
 
 #define USER_AGENT                                                             \
-  ***REMOVED***Linux / Firefox 44: Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:44.0) ***REMOVED***      \
-  ***REMOVED***Gecko/20100101 Firefox/44.0***REMOVED***
+  "Linux / Firefox 44: Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:44.0) "      \
+  "Gecko/20100101 Firefox/44.0"
 
 
 class NetworkingThread::Impl {
@@ -48,22 +48,22 @@ private:
 };
 
 size_t NetworkingThread::Impl::WriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-  // DEBUG_PRINT(***REMOVED***Write callback called with size=***REMOVED*** << size
-  //                                               << ***REMOVED*** and nmemb=***REMOVED*** << nmemb);
+  // DEBUG_PRINT("Write callback called with size=" << size
+  //                                               << " and nmemb=" << nmemb);
   auto *that = reinterpret_cast<NetworkingThread::Impl*>(userdata);
 
   auto bytesToWrite = static_cast<AP4_Size>(size * nmemb);
   AP4_Size bytesWritten;
 
-  // INFO_PRINT(***REMOVED***Attempting to write ***REMOVED*** << bytesToWrite << ***REMOVED*** bytes. (size=***REMOVED*** <<
+  // INFO_PRINT("Attempting to write " << bytesToWrite << " bytes. (size=" <<
   // size
-  //                                  << ***REMOVED*** , nmemb=***REMOVED*** << nmemb << ***REMOVED***)***REMOVED***);
+  //                                  << " , nmemb=" << nmemb << ")");
   // INFO_PRINT(ptr);
 
   that->stream_->WritePartial(ptr, bytesToWrite, bytesWritten);
   if (bytesWritten < bytesToWrite) {
     ERROR_PRINT(
-        ***REMOVED***BlockingStream::WritePartial failed. bytesWritten=***REMOVED*** << bytesWritten);
+        "BlockingStream::WritePartial failed. bytesWritten=" << bytesWritten);
     return bytesWritten;
   }
 
@@ -83,16 +83,16 @@ void NetworkingThread::Impl::Run() {
 
   curlHandle = curl_easy_init();
   if (curlHandle == nullptr) {
-    ERROR_PRINT(***REMOVED***curl_easy_init failed!***REMOVED***);
+    ERROR_PRINT("curl_easy_init failed!");
     isRunning_ = false;
     return;
   }
-  headers = curl_slist_append(headers, ***REMOVED***Accept: application/octet-stream***REMOVED***);
+  headers = curl_slist_append(headers, "Accept: application/octet-stream");
   headers =
-      curl_slist_append(headers, ***REMOVED***Accept-Language: de,en-US;q=0.8,en;q=0.6***REMOVED***);
-  headers = curl_slist_append(headers, ***REMOVED***Cache-Control: max-age=0***REMOVED***);
+      curl_slist_append(headers, "Accept-Language: de,en-US;q=0.8,en;q=0.6");
+  headers = curl_slist_append(headers, "Cache-Control: max-age=0");
 
-  curl_easy_setopt(curlHandle, CURLOPT_ACCEPT_ENCODING, ***REMOVED***gzip, deflate***REMOVED***);
+  curl_easy_setopt(curlHandle, CURLOPT_ACCEPT_ENCODING, "gzip, deflate");
   curl_easy_setopt(curlHandle, CURLOPT_USERAGENT, USER_AGENT);
   curl_easy_setopt(curlHandle, CURLOPT_URL, fileUrl_.c_str());
   // curl_easy_setopt(curlHandle, CURLOPT_VERBOSE, 1L);
@@ -100,28 +100,28 @@ void NetworkingThread::Impl::Run() {
   curl_easy_setopt(curlHandle, CURLOPT_WRITEFUNCTION, &NetworkingThread::Impl::WriteCallback);
   curl_easy_setopt(curlHandle, CURLOPT_WRITEDATA, this);
 
-  DEBUG_PRINT(***REMOVED***CURL set up successful. Version: ***REMOVED*** << curl_version());
-  INFO_PRINT(***REMOVED***Using URL ***REMOVED*** << fileUrl_);
+  DEBUG_PRINT("CURL set up successful. Version: " << curl_version());
+  INFO_PRINT("Using URL " << fileUrl_);
 
   //
   // Do the work
   //
   for (auto const &value : rangeList_) {
     if (!isRunning_) {
-      INFO_PRINT(***REMOVED***Stopping network thread...***REMOVED***);
+      INFO_PRINT("Stopping network thread...");
       break;
     }
     curl_easy_setopt(curlHandle, CURLOPT_RANGE, value.c_str());
 
-    // DEBUG_PRINT(***REMOVED***value=***REMOVED*** << value);
-    int pos = value.find(***REMOVED***-***REMOVED***);
+    // DEBUG_PRINT("value=" << value);
+    int pos = value.find("-");
     int min = std::stoi(value.substr(0, pos));
     int max = std::stoi(value.substr(pos + 1, value.size()));
-    // DEBUG_PRINT(***REMOVED***pos=***REMOVED*** << pos << ***REMOVED***, min=***REMOVED*** << min << ***REMOVED***, max=***REMOVED*** << max);
+    // DEBUG_PRINT("pos=" << pos << ", min=" << min << ", max=" << max);
 
     /*
     if (stream_->Reserve((max - min) + 1) != AP4_SUCCESS) {
-      ERROR_PRINT(***REMOVED***MP4StreamReader::Reserve failed.***REMOVED***);
+      ERROR_PRINT("MP4StreamReader::Reserve failed.");
       // TODO signal all other threads to stop
       break;
     }
@@ -136,12 +136,12 @@ void NetworkingThread::Impl::Run() {
 
     CURLcode res = curl_easy_perform(curlHandle);
     if (CURLE_OK != res) {
-      ERROR_PRINT(***REMOVED***Fetching url ***REMOVED*** << fileUrl_ << ***REMOVED*** failed with reason: ***REMOVED***
+      ERROR_PRINT("Fetching url " << fileUrl_ << " failed with reason: "
                                   << curl_easy_strerror(res));
       isRunning_ = false;
       break;
     } else {
-      // DEBUG_PRINT(***REMOVED***Sucessfully performed CURL request***REMOVED***);
+      // DEBUG_PRINT("Sucessfully performed CURL request");
     }
   }
 
@@ -152,7 +152,7 @@ void NetworkingThread::Impl::Run() {
   curl_easy_cleanup(curlHandle);
   curl_global_cleanup();
 
-  INFO_PRINT(***REMOVED***Finishing NetworkingThread '***REMOVED*** << name_ << ***REMOVED***'...***REMOVED***);
+  INFO_PRINT("Finishing NetworkingThread '" << name_ << "'...");
 }
 
 NetworkingThread::NetworkingThread() : pImpl_(new NetworkingThread::Impl()) {};

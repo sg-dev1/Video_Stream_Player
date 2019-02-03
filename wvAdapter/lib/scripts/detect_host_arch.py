@@ -14,5 +14,5 @@ def detectHostArch():
         hostArch = 'mips'
     return hostArch
 
-if __name__ == ***REMOVED***__main__***REMOVED***:
+if __name__ == "__main__":
     sys.stdout.write(detectHostArch())

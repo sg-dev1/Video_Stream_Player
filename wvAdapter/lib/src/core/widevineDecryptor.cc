@@ -1,14 +1,14 @@
-#include ***REMOVED***widevineDecryptor.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "widevineDecryptor.h"
+#include "assertion.h"
+#include "logging.h"
 
-#include ***REMOVED***components.h***REMOVED***
+#include "components.h"
 
 //
 // @WidevineBuffer
 //
 WidevineBuffer::WidevineBuffer(size_t aSize) {
-  // INFO_PRINT(***REMOVED***Creating WidevineBuffer of size ***REMOVED*** << aSize);
+  // INFO_PRINT("Creating WidevineBuffer of size " << aSize);
   // buffer_ = reinterpret_cast<uint8_t*>(malloc(aSize * sizeof(uint8_t)));
   buffer_ = new uint8_t[aSize];
   bufferCapacity_ = aSize;
@@ -17,7 +17,7 @@ WidevineBuffer::WidevineBuffer(size_t aSize) {
 WidevineBuffer::~WidevineBuffer() {}
 
 void WidevineBuffer::Destroy() {
-  // INFO_PRINT(***REMOVED***WidevineBuffer::Destroy() called ***REMOVED***);
+  // INFO_PRINT("WidevineBuffer::Destroy() called ");
   delete[] buffer_;
   buffer_ = nullptr;
   bufferCapacity_ = 0;
@@ -25,22 +25,22 @@ void WidevineBuffer::Destroy() {
 }
 
 uint32_t WidevineBuffer::Capacity() const {
-  // INFO_PRINT(***REMOVED***WidevineBuffer::Capacity() called ***REMOVED***);
+  // INFO_PRINT("WidevineBuffer::Capacity() called ");
   return bufferCapacity_;
 }
 
 uint8_t *WidevineBuffer::Data() {
-  // INFO_PRINT(***REMOVED***WidevineBuffer::Data() called ***REMOVED***);
+  // INFO_PRINT("WidevineBuffer::Data() called ");
   return buffer_;
 }
 
 void WidevineBuffer::SetSize(uint32_t aSize) {
-  // INFO_PRINT(***REMOVED***Set buffer size to ***REMOVED*** << aSize);
+  // INFO_PRINT("Set buffer size to " << aSize);
   bufferSize_ = aSize;
 }
 
 uint32_t WidevineBuffer::Size() const {
-  // INFO_PRINT(***REMOVED***WidevineBuffer::Size() called ***REMOVED***);
+  // INFO_PRINT("WidevineBuffer::Size() called ");
   return bufferSize_;
 }
 
@@ -100,7 +100,7 @@ void WidevineVideoFrame::SetSize(cdm::Size aSize) {
 cdm::Size WidevineVideoFrame::Size() const { return mSize; }
 
 void WidevineVideoFrame::SetFrameBuffer(cdm::Buffer *aFrameBuffer) {
-  // INFO_PRINT(***REMOVED***WidevineVideoFrame::SetFrameBuffer to ***REMOVED*** << aFrameBuffer);
+  // INFO_PRINT("WidevineVideoFrame::SetFrameBuffer to " << aFrameBuffer);
   mBuffer = aFrameBuffer;
 }
 
@@ -199,7 +199,7 @@ void WidevineDecryptorThread::Impl::Start(const std::string &name, MEDIA_TYPE ty
 void WidevineDecryptorThread::Impl::Run() {
   logging::addThreadIdNameMapping(std::this_thread::get_id(), name_.c_str());
 
-  INFO_PRINT(***REMOVED***Starting WidevineDecryptorThread ...***REMOVED***);
+  INFO_PRINT("Starting WidevineDecryptorThread ...");
 
   while (isRunning_) {
     std::unique_ptr<DEMUXED_SAMPLE> sample = input_->pop();
@@ -207,7 +207,7 @@ void WidevineDecryptorThread::Impl::Run() {
     cdm::Buffer **allSamples =
         (cdm::Buffer **)calloc(numSamples, sizeof(cdm::Buffer *));
     if (allSamples == nullptr) {
-      ERROR_PRINT(***REMOVED***Fatal: Memory allocation failed.***REMOVED***);
+      ERROR_PRINT("Fatal: Memory allocation failed.");
       ASSERT(false);
     }
 
@@ -215,7 +215,7 @@ void WidevineDecryptorThread::Impl::Run() {
     uint8_t *dataToDecrypt = sample->mdatRawData;
     uint32_t errors = 0;
     uint32_t decryptedDataSize = 0;
-    DEBUG_PRINT(***REMOVED***Processing # ***REMOVED*** << numSamples << ***REMOVED*** samples.***REMOVED***);
+    DEBUG_PRINT("Processing # " << numSamples << " samples.");
     for (size_t i = 0; i < numSamples; i++) {
       dataToDecryptSize = 0;
       if (sample->sampleSizes != nullptr) {
@@ -250,13 +250,13 @@ void WidevineDecryptorThread::Impl::Run() {
         // so put some timeout between the decrypt calls
         std::this_thread::sleep_for(std::chrono::microseconds(900));
       } else if (ret != cdm::Status::kNeedMoreData) {
-        ERROR_PRINT(***REMOVED***cdm::Decrypt returned error ***REMOVED*** << ret << ***REMOVED*** at subsample # ***REMOVED***
-                                                   << i << ***REMOVED*** of ***REMOVED*** << numSamples
-                                                   << ***REMOVED*** subsamples.***REMOVED***);
-        PRINT_BYTE_ARRAY(***REMOVED***inBuffer.iv***REMOVED***, inBuffer.iv, inBuffer.iv_size);
-        PRINT_BYTE_ARRAY(***REMOVED***inBuffer.key_id***REMOVED***, inBuffer.key_id,
+        ERROR_PRINT("cdm::Decrypt returned error " << ret << " at subsample # "
+                                                   << i << " of " << numSamples
+                                                   << " subsamples.");
+        PRINT_BYTE_ARRAY("inBuffer.iv", inBuffer.iv, inBuffer.iv_size);
+        PRINT_BYTE_ARRAY("inBuffer.key_id", inBuffer.key_id,
                          inBuffer.key_id_size);
-        PRINT_BYTE_ARRAY(***REMOVED***inBuffer.data***REMOVED***, inBuffer.data, inBuffer.data_size);
+        PRINT_BYTE_ARRAY("inBuffer.data", inBuffer.data, inBuffer.data_size);
         ASSERT(false);
       } else {
         // kNeedMoreData error
@@ -267,7 +267,7 @@ void WidevineDecryptorThread::Impl::Run() {
     }
 
     if (errors > 0) {
-      INFO_PRINT(***REMOVED***kNeedMoreData errors produced: ***REMOVED*** << errors);
+      INFO_PRINT("kNeedMoreData errors produced: " << errors);
     }
 
     uint32_t outDataSize = decryptedDataSize;
@@ -285,7 +285,7 @@ void WidevineDecryptorThread::Impl::Run() {
     output_->emplace(outBuffer, outDataSize, sample->defaultSampleDuration);
   }
 
-  INFO_PRINT(***REMOVED***Finishing WidevineDecryptorThread ...***REMOVED***);
+  INFO_PRINT("Finishing WidevineDecryptorThread ...");
 }
 
 WidevineDecryptorThread::WidevineDecryptorThread() : pImpl_(new WidevineDecryptorThread::Impl()) {}
@@ -306,7 +306,7 @@ void FillCdmInBuffer(std::unique_ptr<DEMUXED_SAMPLE> &sample, cdm::InputBuffer *
                      uint64_t *globalTimestamp, uint32_t headerSize) {
   uint8_t ivSize = sample->sampleInfoTable->GetIvSize();
   const uint8_t *iv = sample->sampleInfoTable->GetIv(samplePos);
-  // PRINT_BYTE_ARRAY(***REMOVED***\tiv***REMOVED***, iv, ivSize);
+  // PRINT_BYTE_ARRAY("\tiv", iv, ivSize);
   unsigned int subsampleCount = 1;
   bool hasSubSamples = false;
   if (sample->sampleSizes == nullptr) {
@@ -318,7 +318,7 @@ void FillCdmInBuffer(std::unique_ptr<DEMUXED_SAMPLE> &sample, cdm::InputBuffer *
   inBuffer->data_size = dataSize;
   inBuffer->key_id = stream->GetDefaultKeyId();
   inBuffer->key_id_size = stream->GetDefaultKeyIdSize();
-  // PRINT_BYTE_ARRAY(***REMOVED***\tkey_id***REMOVED***, inBuffer->key_id, inBuffer->key_id_size);
+  // PRINT_BYTE_ARRAY("\tkey_id", inBuffer->key_id, inBuffer->key_id_size);
   inBuffer->iv = iv;
   inBuffer->iv_size = ivSize;
   inBuffer->num_subsamples = subsampleCount;
@@ -340,9 +340,9 @@ void FillCdmInBuffer(std::unique_ptr<DEMUXED_SAMPLE> &sample, cdm::InputBuffer *
       inBuffer->subsamples[j].clear_bytes = bytes_of_cleartext_data;
       inBuffer->subsamples[j].cipher_bytes = bytes_of_encrypted_data;
 
-      DEBUG_PRINT(***REMOVED***\t\tsubsample ***REMOVED***
-                 << j << ***REMOVED***: clear_bytes: ***REMOVED*** << bytes_of_cleartext_data
-                 << ***REMOVED***, cipher_bytes: ***REMOVED*** << bytes_of_encrypted_data);
+      DEBUG_PRINT("\t\tsubsample "
+                 << j << ": clear_bytes: " << bytes_of_cleartext_data
+                 << ", cipher_bytes: " << bytes_of_encrypted_data);
     }
   } else {
     inBuffer->subsamples[0].clear_bytes = headerSize;

@@ -4,9 +4,9 @@
 #include <memory>
 #include <functional>
 
-#include ***REMOVED***Ap4ByteStream.h***REMOVED***
-#include ***REMOVED***constants.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "Ap4ByteStream.h"
+#include "constants.h"
+#include "common.h"
 
 struct NETWORK_FRAGMENT {
   NETWORK_FRAGMENT() : buffer(nullptr), size(0) {}

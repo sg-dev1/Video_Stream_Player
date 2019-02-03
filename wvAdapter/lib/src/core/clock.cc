@@ -1,6 +1,6 @@
-#include ***REMOVED***clock.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "clock.h"
+#include "assertion.h"
+#include "logging.h"
 
 #define MAX_DELTA 0.5
 
@@ -13,9 +13,9 @@ void Clock::SetStartTime(Clock::MEDIA_TYPE mediaType) {
     startedThreads_++;
     threadIdMediaTypeMapping_[std::this_thread::get_id()] = mediaType;
     if (mediaType == Clock::MEDIA_TYPE::AUDIO) {
-      INFO_PRINT(***REMOVED***Starting audio clock ...***REMOVED***);
+      INFO_PRINT("Starting audio clock ...");
     } else if (mediaType == Clock::MEDIA_TYPE::VIDEO) {
-      INFO_PRINT(***REMOVED***Starting video clock ...***REMOVED***);
+      INFO_PRINT("Starting video clock ...");
     }
 
 #if !defined(DISABLE_CLOCK_SYNC) && !defined(DISABLE_AUDIO) &&                 \
@@ -25,9 +25,9 @@ void Clock::SetStartTime(Clock::MEDIA_TYPE mediaType) {
     });
     waitTillStarted_.notify_one();
     if (mediaType == Clock::MEDIA_TYPE::AUDIO) {
-      INFO_PRINT(***REMOVED***Audio clock started!***REMOVED***);
+      INFO_PRINT("Audio clock started!");
     } else if (mediaType == Clock::MEDIA_TYPE::VIDEO) {
-      INFO_PRINT(***REMOVED***Video clock started!***REMOVED***);
+      INFO_PRINT("Video clock started!");
     }
 #endif
   }
@@ -71,17 +71,17 @@ void Clock::Sync(double frameDuration) {
 
     if (mediaType == Clock::MEDIA_TYPE::AUDIO) {
       audioTime_ += frameDuration;
-      DEBUG_PRINT(***REMOVED***New audioTime: ***REMOVED*** << audioTime_);
+      DEBUG_PRINT("New audioTime: " << audioTime_);
     } else if (mediaType == Clock::MEDIA_TYPE::VIDEO) {
       videoTime_ += frameDuration;
-      DEBUG_PRINT(***REMOVED***New videoTime: ***REMOVED*** << videoTime_);
+      DEBUG_PRINT("New videoTime: " << videoTime_);
     } else {
       ASSERT(false);
     }
   }
   syncCond_.notify_one();
   if (timeToSleepMicros > 0) {
-    DEBUG_PRINT(***REMOVED***Sleeping for ***REMOVED*** << timeToSleepMicros << ***REMOVED*** microseconds.***REMOVED***);
+    DEBUG_PRINT("Sleeping for " << timeToSleepMicros << " microseconds.");
     std::this_thread::sleep_for(std::chrono::microseconds(timeToSleepMicros));
   }
 }
@@ -92,6 +92,6 @@ void Clock::UpdateAudioTime(double frameDuration) {
 
     audioTime_ += frameDuration;
     syncCond_.notify_one();
-    DEBUG_PRINT(***REMOVED***New audioTime: ***REMOVED*** << audioTime_);
+    DEBUG_PRINT("New audioTime: " << audioTime_);
   }
 }

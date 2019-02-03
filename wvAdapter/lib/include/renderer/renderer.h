@@ -1,7 +1,7 @@
 #ifndef RENDERER_
 #define RENDERER_
 
-#include ***REMOVED***clock.h***REMOVED***
+#include "clock.h"
 
 struct FRAME {
   // prevent source type is not polymorphic error

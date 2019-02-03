@@ -1,17 +1,17 @@
-#include ***REMOVED***mp4_stream.h***REMOVED***
-#include ***REMOVED***assertion.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***components.h***REMOVED***
+#include "mp4_stream.h"
+#include "assertion.h"
+#include "logging.h"
+#include "components.h"
 
 // Bento4 includes
-#include ***REMOVED***Ap4SencAtom.h***REMOVED***
-#include ***REMOVED***Ap4TfhdAtom.h***REMOVED***
-#include ***REMOVED***Ap4TrunAtom.h***REMOVED***
-#include ***REMOVED***Ap4MdhdAtom.h***REMOVED***
-#include ***REMOVED***Ap4TrakAtom.h***REMOVED***
-#include ***REMOVED***Ap4StsdAtom.h***REMOVED***
-#include ***REMOVED***Ap4Movie.h***REMOVED***
-#include ***REMOVED***Ap4TencAtom.h***REMOVED***
+#include "Ap4SencAtom.h"
+#include "Ap4TfhdAtom.h"
+#include "Ap4TrunAtom.h"
+#include "Ap4MdhdAtom.h"
+#include "Ap4TrakAtom.h"
+#include "Ap4StsdAtom.h"
+#include "Ap4Movie.h"
+#include "Ap4TencAtom.h"
 
 #include <atomic>
 
@@ -120,26 +120,26 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
   bool advance = false;
   while (true) {
     if (advance) {
-      DEBUG_PRINT(***REMOVED***Advancing...***REMOVED***);
+      DEBUG_PRINT("Advancing...");
       break;
     }
 
     AP4_Position pos;
     input_->Tell(pos);
 
-    DEBUG_PRINT(***REMOVED***In BlockingStream at ***REMOVED*** << pos);
+    DEBUG_PRINT("In BlockingStream at " << pos);
 
     AP4_Atom *atom(nullptr);
     if (AP4_FAILED(atom_factory.CreateAtomFromStream(*input_, atom))) {
-      WARN_PRINT(***REMOVED***No additional atom found.***REMOVED***);
+      WARN_PRINT("No additional atom found.");
       sampleToReturn.reset(nullptr);
       return sampleToReturn;
     }
 
     if (atom->GetType() == AP4_ATOM_TYPE_MOOF) {
-      // DEBUG_PRINT(***REMOVED***MOOF found!***REMOVED***);
+      // DEBUG_PRINT("MOOF found!");
       if (moofFound) {
-        WARN_PRINT(***REMOVED***Already found a MOOF. Skipping..***REMOVED***);
+        WARN_PRINT("Already found a MOOF. Skipping..");
         goto wend;
       }
 
@@ -149,13 +149,13 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
       // process the traf atoms - assume that there is only one
       AP4_Atom *child = moof->GetChild(AP4_ATOM_TYPE_TRAF, 0);
       if (!child) {
-        ERROR_PRINT(***REMOVED***moof->GetChild(AP4_ATOM_TYPE_TRAF, 0) failed!***REMOVED***);
+        ERROR_PRINT("moof->GetChild(AP4_ATOM_TYPE_TRAF, 0) failed!");
         moofFound = false;
         goto wend;
       }
       auto *traf = AP4_DYNAMIC_CAST(AP4_ContainerAtom, child);
       if (!traf) {
-        ERROR_PRINT(***REMOVED***traf = AP4_DYNAMIC_CAST(AP4_ContainerAtom, child) failed***REMOVED***);
+        ERROR_PRINT("traf = AP4_DYNAMIC_CAST(AP4_ContainerAtom, child) failed");
         moofFound = false;
         goto wend;
       }
@@ -168,19 +168,19 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
       if (tfhd) {
         sampleToReturn->defaultSampleDuration = tfhd->GetDefaultSampleDuration();
       } else {
-        WARN_PRINT(***REMOVED***No default sample duration found. Assuming 2560.***REMOVED***);
+        WARN_PRINT("No default sample duration found. Assuming 2560.");
         sampleToReturn->defaultSampleDuration = 2560;
       }
 
       //
       // SENC (sample encryption) atom
       //
-      // DEBUG_PRINT(***REMOVED***Parsing SENC atom***REMOVED***);
+      // DEBUG_PRINT("Parsing SENC atom");
       AP4_CencSampleEncryption *sample_encryption_atom =
           AP4_DYNAMIC_CAST(AP4_SencAtom, traf->GetChild(AP4_ATOM_TYPE_SENC));
       if (!sample_encryption_atom) {
         WARN_PRINT(
-            ***REMOVED***SENC atom not found. Assume that this is an unencrypted file***REMOVED***);
+            "SENC atom not found. Assume that this is an unencrypted file");
         ASSERT(!isProtected());
         goto wend;
       }
@@ -188,13 +188,13 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
       auto hasSubSamples = static_cast<bool>(sample_encryption_atom->GetOuter().GetFlags() &
                       AP4_CENC_SAMPLE_ENCRYPTION_FLAG_USE_SUB_SAMPLE_ENCRYPTION);
       sampleToReturn->hasSubSamples = hasSubSamples;
-      // DEBUG_PRINT(***REMOVED***Has subsamples = ***REMOVED*** << hasSubSamples);
+      // DEBUG_PRINT("Has subsamples = " << hasSubSamples);
 
       if (!hasSubSamples) {
         auto *trun =
             AP4_DYNAMIC_CAST(AP4_TrunAtom, traf->GetChild(AP4_ATOM_TYPE_TRUN));
         if (!trun) {
-          ERROR_PRINT(***REMOVED***No TRUN atom found.***REMOVED***);
+          ERROR_PRINT("No TRUN atom found.");
           moofFound = false;
           goto wend;
         }
@@ -209,7 +209,7 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
         }
       }
 
-      // DEBUG_PRINT(***REMOVED***Sample Info table handling...***REMOVED***);
+      // DEBUG_PRINT("Sample Info table handling...");
       AP4_CencSampleInfoTable *sample_info_table = nullptr;
       AP4_UI08 crypt_byte_block = GetDefaultCryptByteBlock();
       AP4_UI08 skip_byte_block = GetDefaultSkipByteBlock();
@@ -223,28 +223,28 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
           0, crypt_byte_block, skip_byte_block, per_sample_iv_size,
           constant_iv_size, constant_iv, sample_info_table);
       if (AP4_FAILED(ret)) {
-        ERROR_PRINT(***REMOVED***CreateSampleInfoTable failed***REMOVED***);
+        ERROR_PRINT("CreateSampleInfoTable failed");
         moofFound = false;
         goto wend;
       }
       sampleToReturn->sampleInfoTable.reset(sample_info_table);
-      // DEBUG_PRINT(***REMOVED***sample info table created***REMOVED***);
+      // DEBUG_PRINT("sample info table created");
 
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
       // NOTE if this block is disabled also the block at the bottom must be
       // disabled else the demuxer fails because he thinks that the expected
       // size does not match the actual size (sample.mdatRawDataSize)
-      // DEBUG_PRINT(***REMOVED***sample count: ***REMOVED*** <<
+      // DEBUG_PRINT("sample count: " <<
       // sample.sampleInfoTable->GetSampleCount());
       for (size_t i = 0;
            i < sampleToReturn->sampleInfoTable->GetSampleCount() && hasSubSamples; i++) {
-        // INFO_PRINT(***REMOVED***\tsample ***REMOVED*** << i);
+        // INFO_PRINT("\tsample " << i);
         size_t sampleSize = 0;
-        // INFO_PRINT(***REMOVED***GetSubsampleCount(***REMOVED*** << i << ***REMOVED***):***REMOVED***);
-        // INFO_PRINT(***REMOVED***... ***REMOVED*** << sample.sampleInfoTable->GetSubsampleCount(i));
+        // INFO_PRINT("GetSubsampleCount(" << i << "):");
+        // INFO_PRINT("... " << sample.sampleInfoTable->GetSubsampleCount(i));
         for (size_t j = 0; j < sampleToReturn->sampleInfoTable->GetSubsampleCount(i);
              j++) {
-          // DEBUG_PRINT(***REMOVED***Subsample # ***REMOVED*** << j);
+          // DEBUG_PRINT("Subsample # " << j);
           uint16_t bytes_of_cleartext_data;
           uint32_t bytes_of_encrypted_data;
           sampleToReturn->sampleInfoTable->GetSubsampleInfo(
@@ -252,19 +252,19 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
           expectedSize += bytes_of_encrypted_data + bytes_of_cleartext_data;
           sampleSize += bytes_of_encrypted_data + bytes_of_cleartext_data;
           /*
-          INFO_PRINT(***REMOVED***\t\tsubsample ***REMOVED***
-                     << j << ***REMOVED***: clear_bytes: ***REMOVED*** << bytes_of_cleartext_data
-                     << ***REMOVED***, cipher_bytes: ***REMOVED*** << bytes_of_encrypted_data);
+          INFO_PRINT("\t\tsubsample "
+                     << j << ": clear_bytes: " << bytes_of_cleartext_data
+                     << ", cipher_bytes: " << bytes_of_encrypted_data);
           */
         }
-        // INFO_PRINT(***REMOVED***\tsample size: ***REMOVED*** << sampleSize);
+        // INFO_PRINT("\tsample size: " << sampleSize);
       }
 #endif
 
     } else if (atom->GetType() == AP4_ATOM_TYPE_MDAT) {
-      // DEBUG_PRINT(***REMOVED***MDAT found!***REMOVED***);
+      // DEBUG_PRINT("MDAT found!");
       if (mdatFound) {
-        WARN_PRINT(***REMOVED***Already a mdat found. Skipping..***REMOVED***);
+        WARN_PRINT("Already a mdat found. Skipping..");
         goto wend;
       }
 
@@ -278,7 +278,7 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
       mdatFound = true;
       advance = true;
     } else {
-      PRETTY_PRINT_BENTO4_FORMAT(***REMOVED***Unknown format found***REMOVED***, atom->GetType());
+      PRETTY_PRINT_BENTO4_FORMAT("Unknown format found", atom->GetType());
     }
 
   wend:
@@ -286,19 +286,19 @@ std::unique_ptr<DEMUXED_SAMPLE> MP4Stream::Impl::ParseMoofMdat(bool &result) {
   }
 
   if (!mdatFound || !moofFound) {
-    ERROR_PRINT(***REMOVED***Either mdat or moof or both not found: mdatFound=***REMOVED***
-                << mdatFound << ***REMOVED***, moofFound=***REMOVED*** << moofFound);
+    ERROR_PRINT("Either mdat or moof or both not found: mdatFound="
+                << mdatFound << ", moofFound=" << moofFound);
     sampleToReturn.reset(nullptr);
     return sampleToReturn;
   } else {
-    // DEBUG_PRINT(***REMOVED***MDAT and MOOF found!***REMOVED***);
+    // DEBUG_PRINT("MDAT and MOOF found!");
   }
 
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
   if (isProtected() && expectedSize != sampleToReturn->mdatRawDataSize) {
-    ERROR_PRINT(***REMOVED***Expected size does not match actual size (expectedSize: ***REMOVED***
-                << expectedSize << ***REMOVED***, actualSize: ***REMOVED*** << sampleToReturn->mdatRawDataSize
-                << ***REMOVED***)***REMOVED***);
+    ERROR_PRINT("Expected size does not match actual size (expectedSize: "
+                << expectedSize << ", actualSize: " << sampleToReturn->mdatRawDataSize
+                << ")");
     sampleToReturn.reset(nullptr);
     return sampleToReturn;
   }
@@ -408,7 +408,7 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
                                 const uint8_t *initData, size_t initDataSize,
                                 const uint8_t *codecPrivateData,
                                 size_t codecPrivateDataSize) {
-  DEBUG_PRINT(***REMOVED***Init MP4VideoStream***REMOVED***);
+  DEBUG_PRINT("Init MP4VideoStream");
 
   // After init in constructor input_ here still is null
   // However test case requires init in constructor
@@ -429,18 +429,18 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
   AP4_File f(*byteStream, AP4_DefaultAtomFactory::Instance_, true);
   AP4_Movie *movie = f.GetMovie();
   if (movie == nullptr) {
-    ERROR_PRINT(***REMOVED***No MOOV in stream! Init failed..***REMOVED***);
+    ERROR_PRINT("No MOOV in stream! Init failed..");
     byteStream->Release();
     return false;
   }
 
   AP4_List<AP4_Track> &tracks = movie->GetTracks();
   if (tracks.ItemCount() == 0) {
-    ERROR_PRINT(***REMOVED***No tracks found in MOOV***REMOVED***);
+    ERROR_PRINT("No tracks found in MOOV");
     byteStream->Release();
     return false;
   }
-  INFO_PRINT(***REMOVED***Found ***REMOVED*** << tracks.ItemCount() << ***REMOVED*** tracks.***REMOVED***);
+  INFO_PRINT("Found " << tracks.ItemCount() << " tracks.");
   AP4_Track *track = nullptr;
   for (unsigned int i = 0; i < tracks.ItemCount(); i++) {
     tracks.Get(i, track); // always choose first non null track
@@ -449,7 +449,7 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
     }
   }
   if (!track) {
-    ERROR_PRINT(***REMOVED***No suitable track found in MOVV***REMOVED***);
+    ERROR_PRINT("No suitable track found in MOVV");
     byteStream->Release();
     return false;
   }
@@ -461,17 +461,17 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
   //
   // get time scale
   //
-  auto *mdhd = AP4_DYNAMIC_CAST(AP4_MdhdAtom, trak->FindChild(***REMOVED***mdia/mdhd***REMOVED***));
+  auto *mdhd = AP4_DYNAMIC_CAST(AP4_MdhdAtom, trak->FindChild("mdia/mdhd"));
   if (mdhd) {
     timeScale_ = mdhd->GetTimeScale();
   } else {
-    WARN_PRINT(***REMOVED***MDHD atom could not be fetched. Trying MVHD atom.***REMOVED***);
+    WARN_PRINT("MDHD atom could not be fetched. Trying MVHD atom.");
     // try to fetch timescale from moov.mvhd atom
     AP4_MvhdAtom *mvhd = movie->GetMvhdAtom();
     if (mvhd) {
       timeScale_ = mvhd->GetTimeScale();
     } else {
-      ERROR_PRINT(***REMOVED***MVHD fetch failed. Setting reasonable default time scale***REMOVED***);
+      ERROR_PRINT("MVHD fetch failed. Setting reasonable default time scale");
       timeScale_ = 100000;
     }
   }
@@ -480,9 +480,9 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
   //
   // Obtain ENCV (AVCC)
   //
-  auto *stsd = AP4_DYNAMIC_CAST(AP4_StsdAtom, trak->FindChild(***REMOVED***mdia/minf/stbl/stsd***REMOVED***));
+  auto *stsd = AP4_DYNAMIC_CAST(AP4_StsdAtom, trak->FindChild("mdia/minf/stbl/stsd"));
   if (!stsd || stsd->GetSampleDescriptionCount() <= 0) {
-    ERROR_PRINT(***REMOVED***Error fetching stsd atom or SampleDescriptionCount was 0***REMOVED***);
+    ERROR_PRINT("Error fetching stsd atom or SampleDescriptionCount was 0");
     byteStream->Release();
     return false;
   }
@@ -490,11 +490,11 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
   if (format == AP4_ATOM_TYPE_AVC1 || format == AP4_ATOM_TYPE_AVC2 ||
       format == AP4_ATOM_TYPE_AVC3 || format == AP4_ATOM_TYPE_AVC4 ||
       format == AP4_ATOM_TYPE_ENCV) {
-    INFO_PRINT(***REMOVED***AVC atom found***REMOVED***);
+    INFO_PRINT("AVC atom found");
     auto *avcc = AP4_DYNAMIC_CAST(
         AP4_AvccAtom, stsd->GetSampleEntry(0)->GetChild(AP4_ATOM_TYPE_AVCC));
     if (!avcc) {
-      ERROR_PRINT(***REMOVED***Error obtaining AVCC atom***REMOVED***);
+      ERROR_PRINT("Error obtaining AVCC atom");
       byteStream->Release();
       return false;
     }
@@ -505,13 +505,13 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
     AP4_Array<AP4_DataBuffer> sequenceParams = avcc->GetSequenceParameters();
     for (size_t j = 0; j < sequenceParams.ItemCount(); j++) {
       AP4_DataBuffer buf = sequenceParams[j];
-      PRINT_BYTE_ARRAY(***REMOVED***\t\t\tSequenceParameters***REMOVED***, buf.UseData(),
+      PRINT_BYTE_ARRAY("\t\t\tSequenceParameters", buf.UseData(),
                        buf.GetDataSize());
     }
     AP4_Array<AP4_DataBuffer> pictureParams = avcc->GetPictureParameters();
     for (size_t j = 0; j < pictureParams.ItemCount(); j++) {
       AP4_DataBuffer buf = pictureParams[j];
-      PRINT_BYTE_ARRAY(***REMOVED***\t\t\tPictureParameters***REMOVED***, buf.UseData(),
+      PRINT_BYTE_ARRAY("\t\t\tPictureParameters", buf.UseData(),
                        buf.GetDataSize());
     }
 
@@ -557,7 +557,7 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
       memcpy(ptr, buf.UseData(), buf.GetDataSize());
       ptr += buf.GetDataSize();
     }
-    PRINT_BYTE_ARRAY(***REMOVED***videoCodecExtraData_***REMOVED***, videoCodecExtraData_,
+    PRINT_BYTE_ARRAY("videoCodecExtraData_", videoCodecExtraData_,
                      videoCodecExtraDataSize_);
   }
 
@@ -566,7 +566,7 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
   //
   AP4_SampleDescription *sdesc = track->GetSampleDescription(0);
   if (!sdesc) {
-    ERROR_PRINT(***REMOVED***No sampledescription found***REMOVED***);
+    ERROR_PRINT("No sampledescription found");
     byteStream->Release();
     return false;
   }
@@ -575,20 +575,20 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
     auto *desc = static_cast<AP4_ProtectedSampleDescription *>(sdesc);
     AP4_ProtectionSchemeInfo *scheme_info = desc->GetSchemeInfo();
     if (!scheme_info) {
-      ERROR_PRINT(***REMOVED***No AP4_ProtectionSchemeInfo found***REMOVED***);
+      ERROR_PRINT("No AP4_ProtectionSchemeInfo found");
       byteStream->Release();
       return false;
     }
     AP4_ContainerAtom *schi = scheme_info->GetSchiAtom();
     if (!schi) {
-      ERROR_PRINT(***REMOVED***No SCHI atom found***REMOVED***);
+      ERROR_PRINT("No SCHI atom found");
       byteStream->Release();
       return false;
     }
 
-    auto *tenc = AP4_DYNAMIC_CAST(AP4_TencAtom, schi->FindChild(***REMOVED***tenc***REMOVED***));
+    auto *tenc = AP4_DYNAMIC_CAST(AP4_TencAtom, schi->FindChild("tenc"));
     if (!tenc) {
-      ERROR_PRINT(***REMOVED***No TENC atom found***REMOVED***);
+      ERROR_PRINT("No TENC atom found");
       byteStream->Release();
       return false;
     }
@@ -603,16 +603,16 @@ bool MP4VideoStream::Impl::Init(std::string &mediaFileUrl,
   } else {
     // TODO handle non protected samples, e.g. no decryption required
     // e.g. extract (h.264 encoded) VideoFrames from MDAT
-    INFO_PRINT(***REMOVED***Non protected (encrypted) MP4 file***REMOVED***);
+    INFO_PRINT("Non protected (encrypted) MP4 file");
   }
 
   byteStream->Release();
-  DEBUG_PRINT(***REMOVED***MP4Stream initialized successful***REMOVED***);
+  DEBUG_PRINT("MP4Stream initialized successful");
   return true;
 }
 
 void MP4VideoStream::Impl::Close() {
-  DEBUG_PRINT(***REMOVED***Closing MP4Stream***REMOVED***);
+  DEBUG_PRINT("Closing MP4Stream");
   if (videoCodecExtraData_) {
     delete[] videoCodecExtraData_;
   }
@@ -705,7 +705,7 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
                                 const uint8_t *initData, size_t initDataSize,
                                 const uint8_t *codecPrivateData,
                                 size_t codecPrivateDataSize) {
-  DEBUG_PRINT(***REMOVED***Init MP4AudioStream***REMOVED***);
+  DEBUG_PRINT("Init MP4AudioStream");
 
   // After init in constructor input_ here still is null
   // However test case requires init in constructor
@@ -723,18 +723,18 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
   AP4_File f(*byteStream, AP4_DefaultAtomFactory::Instance_, true);
   AP4_Movie *movie = f.GetMovie();
   if (movie == nullptr) {
-    ERROR_PRINT(***REMOVED***No MOOV in stream! Init failed..***REMOVED***);
+    ERROR_PRINT("No MOOV in stream! Init failed..");
     byteStream->Release();
     return false;
   }
 
   AP4_List<AP4_Track> &tracks = movie->GetTracks();
   if (tracks.ItemCount() == 0) {
-    ERROR_PRINT(***REMOVED***No tracks found in MOOV***REMOVED***);
+    ERROR_PRINT("No tracks found in MOOV");
     byteStream->Release();
     return false;
   }
-  INFO_PRINT(***REMOVED***Found ***REMOVED*** << tracks.ItemCount() << ***REMOVED*** tracks.***REMOVED***);
+  INFO_PRINT("Found " << tracks.ItemCount() << " tracks.");
   AP4_Track *track = nullptr;
   for (unsigned int i = 0; i < tracks.ItemCount(); i++) {
     // NOTE this currently relies on the file only having one track
@@ -746,7 +746,7 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
     }
   }
   if (!track) {
-    ERROR_PRINT(***REMOVED***No suitable track found in MOVV***REMOVED***);
+    ERROR_PRINT("No suitable track found in MOVV");
     byteStream->Release();
     return false;
   }
@@ -757,17 +757,17 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
   //
   // get time scale
   //
-  auto *mdhd = AP4_DYNAMIC_CAST(AP4_MdhdAtom, trak->FindChild(***REMOVED***mdia/mdhd***REMOVED***));
+  auto *mdhd = AP4_DYNAMIC_CAST(AP4_MdhdAtom, trak->FindChild("mdia/mdhd"));
   if (mdhd) {
     timeScale_ = mdhd->GetTimeScale();
   } else {
-    WARN_PRINT(***REMOVED***MDHD atom could not be fetched. Trying MVHD atom.***REMOVED***);
+    WARN_PRINT("MDHD atom could not be fetched. Trying MVHD atom.");
     // try to fetch timescale from moov.mvhd atom
     AP4_MvhdAtom *mvhd = movie->GetMvhdAtom();
     if (mvhd) {
       timeScale_ = mvhd->GetTimeScale();
     } else {
-      ERROR_PRINT(***REMOVED***MVHD fetch failed. Setting reasonable default time scale***REMOVED***);
+      ERROR_PRINT("MVHD fetch failed. Setting reasonable default time scale");
       timeScale_ = 100000;
     }
   }
@@ -776,15 +776,15 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
   //
   // fetch sample description
   //
-  auto *stsd = AP4_DYNAMIC_CAST(AP4_StsdAtom, trak->FindChild(***REMOVED***mdia/minf/stbl/stsd***REMOVED***));
+  auto *stsd = AP4_DYNAMIC_CAST(AP4_StsdAtom, trak->FindChild("mdia/minf/stbl/stsd"));
   if (!stsd || stsd->GetSampleDescriptionCount() <= 0) {
-    ERROR_PRINT(***REMOVED***Error fetching stsd atom or SampleDescriptionCount was 0***REMOVED***);
+    ERROR_PRINT("Error fetching stsd atom or SampleDescriptionCount was 0");
     byteStream->Release();
     return false;
   }
   AP4_SampleDescription *sdesc = track->GetSampleDescription(0);
   if (!sdesc) {
-    ERROR_PRINT(***REMOVED***No sampledescription found***REMOVED***);
+    ERROR_PRINT("No sampledescription found");
     byteStream->Release();
     return false;
   }
@@ -793,7 +793,7 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
   if (format == AP4_ATOM_TYPE_MP4A) {
     auto *mpeg_audio_desc = AP4_DYNAMIC_CAST(AP4_MpegAudioSampleDescription, sdesc);
     if (!mpeg_audio_desc) {
-      ERROR_PRINT(***REMOVED***Casting to AP4_MpegAudioSampleDescription failed.***REMOVED***);
+      ERROR_PRINT("Casting to AP4_MpegAudioSampleDescription failed.");
       byteStream->Release();
       return false;
     }
@@ -810,14 +810,14 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
   } else if (format == AP4_ATOM_TYPE_ENCA) {
     auto *enca_sample_entry = AP4_DYNAMIC_CAST(AP4_EncaSampleEntry, stsd->GetSampleEntry(0));
     if (!enca_sample_entry) {
-      ERROR_PRINT(***REMOVED***Casting to ENCA sample entry failed***REMOVED***);
+      ERROR_PRINT("Casting to ENCA sample entry failed");
       byteStream->Release();
       return false;
     }
 
-    auto *esds = AP4_DYNAMIC_CAST(AP4_EsdsAtom, enca_sample_entry->FindChild(***REMOVED***esds***REMOVED***));
+    auto *esds = AP4_DYNAMIC_CAST(AP4_EsdsAtom, enca_sample_entry->FindChild("esds"));
     if (!esds) {
-      ERROR_PRINT(***REMOVED***ESDS atom could not be found.***REMOVED***);
+      ERROR_PRINT("ESDS atom could not be found.");
       return false;
     }
     AP4_DataBuffer decoderSpecificInfo =
@@ -827,14 +827,14 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
             ->GetDecoderSpecificInfo();
     decoderSpecificInfoSize_ = static_cast<uint8_t>(decoderSpecificInfo.GetDataSize());
     if (decoderSpecificInfo.GetDataSize() > DECODERSPECIFICINFO_MAX_SIZE) {
-      ERROR_PRINT(***REMOVED***Decoder specific info size of ***REMOVED***
-                      << decoderSpecificInfo.GetDataSize() << ***REMOVED*** is bigger than max size ***REMOVED***
+      ERROR_PRINT("Decoder specific info size of "
+                      << decoderSpecificInfo.GetDataSize() << " is bigger than max size "
                       << DECODERSPECIFICINFO_MAX_SIZE
-                      << ***REMOVED***. Try to increase the MAX size to fix this issue.***REMOVED***);
+                      << ". Try to increase the MAX size to fix this issue.");
       return false;
     }
     if (decoderSpecificInfoSize_ < 2) {
-      ERROR_PRINT(***REMOVED***Decoder specific info size must at least be 2!***REMOVED***);
+      ERROR_PRINT("Decoder specific info size must at least be 2!");
       return false;
     }
 
@@ -848,8 +848,8 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
     channelConfig_ = static_cast<uint8_t>((decoderSpecificInfo_[1] >> 3) & 0xf);
 
 #if 0
-    printf(***REMOVED***audioObjectType_=0x%02x (%d), frequencyIndex_=0x%02x (%d), ***REMOVED***
-           ***REMOVED***channelconfig=0x%02x (%d)\n***REMOVED***,
+    printf("audioObjectType_=0x%02x (%d), frequencyIndex_=0x%02x (%d), "
+           "channelconfig=0x%02x (%d)\n",
            audioObjectType_, audioObjectType_, frequencyIndex_, frequencyIndex_,
            channelConfig_, channelConfig_);
     ASSERT(false);
@@ -863,20 +863,20 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
     auto *desc = static_cast<AP4_ProtectedSampleDescription *>(sdesc);
     AP4_ProtectionSchemeInfo *scheme_info = desc->GetSchemeInfo();
     if (!scheme_info) {
-      ERROR_PRINT(***REMOVED***No AP4_ProtectionSchemeInfo found***REMOVED***);
+      ERROR_PRINT("No AP4_ProtectionSchemeInfo found");
       byteStream->Release();
       return false;
     }
     AP4_ContainerAtom *schi = scheme_info->GetSchiAtom();
     if (!schi) {
-      ERROR_PRINT(***REMOVED***No SCHI atom found***REMOVED***);
+      ERROR_PRINT("No SCHI atom found");
       byteStream->Release();
       return false;
     }
 
-    auto *tenc = AP4_DYNAMIC_CAST(AP4_TencAtom, schi->FindChild(***REMOVED***tenc***REMOVED***));
+    auto *tenc = AP4_DYNAMIC_CAST(AP4_TencAtom, schi->FindChild("tenc"));
     if (!tenc) {
-      ERROR_PRINT(***REMOVED***No TENC atom found***REMOVED***);
+      ERROR_PRINT("No TENC atom found");
       byteStream->Release();
       return false;
     }
@@ -889,8 +889,8 @@ bool MP4AudioStream::Impl::Init(std::string &mediaFileUrl,
     defaultCryptByteBlock_ = tenc->GetDefaultCryptByteBlock();
     defaultSkipByteBlock_ = tenc->GetDefaultSkipByteBlock();
   } else {
-    ERROR_PRINT(***REMOVED***Format not supported***REMOVED***);
-    PRETTY_PRINT_BENTO4_FORMAT(***REMOVED***Got format***REMOVED***, format);
+    ERROR_PRINT("Format not supported");
+    PRETTY_PRINT_BENTO4_FORMAT("Got format", format);
     byteStream->Release();
     return false;
   }
@@ -954,9 +954,9 @@ uint8_t *MP4AudioStream::Impl::BuildAdtsHeader(uint8_t *outptr, uint32_t sampleS
   memset(outptr++, tmp, 1);
 
   /*
-  DEBUG_PRINT(***REMOVED***Used sample size: ***REMOVED*** << sampleSize
-                                   << ***REMOVED***, numDataBlocks=***REMOVED*** << numDataBlocks);
-  PRINT_BYTE_ARRAY(***REMOVED***outptr***REMOVED***, outptr - GetAdtsHeaderSize(), GetAdtsHeaderSize());
+  DEBUG_PRINT("Used sample size: " << sampleSize
+                                   << ", numDataBlocks=" << numDataBlocks);
+  PRINT_BYTE_ARRAY("outptr", outptr - GetAdtsHeaderSize(), GetAdtsHeaderSize());
   */
 
   return outptr;

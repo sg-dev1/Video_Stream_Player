@@ -33,7 +33,7 @@ typedef __int64 int64_t;
 #else  // defined(WIN32)
 
 #if defined(CDM_IMPLEMENTATION)
-#define CDM_EXPORT __attribute__((visibility(***REMOVED***default***REMOVED***)))
+#define CDM_EXPORT __attribute__((visibility("default")))
 #else
 #define CDM_EXPORT
 #endif
@@ -53,7 +53,7 @@ typedef __int64 int64_t;
   BUILD_ENTRYPOINT_NO_EXPANSION(name, version)
 #define BUILD_ENTRYPOINT_NO_EXPANSION(name, version) name##_##version
 
-extern ***REMOVED***C***REMOVED*** {
+extern "C" {
 CDM_EXPORT void INITIALIZE_CDM_MODULE();
 
 CDM_EXPORT void DeinitializeCdmModule();
@@ -360,7 +360,7 @@ enum MessageType {
 // FileIO interface provides a way for the CDM to store data in a file in
 // persistent storage. This interface aims only at providing basic read/write
 // capabilities and should not be used as a full fledged file IO API.
-// Each CDM and origin (e.g. HTTPS, ***REMOVED***foo.example.com***REMOVED***, 443) combination has
+// Each CDM and origin (e.g. HTTPS, "foo.example.com", 443) combination has
 // its own persistent storage. All instances of a given CDM associated with a
 // given origin share the same persistent storage.
 // Note to implementors of this interface:
@@ -371,8 +371,8 @@ class FileIO {
   // Opens the file with |file_name| for read and write.
   // FileIOClient::OnOpenComplete() will be called after the opening
   // operation finishes.
-  // - When the file is opened by a CDM instance, it will be classified as ***REMOVED***in
-  //   use***REMOVED***. In this case other CDM instances in the same domain may receive
+  // - When the file is opened by a CDM instance, it will be classified as "in
+  //   use". In this case other CDM instances in the same domain may receive
   //   kInUse status when trying to open it.
   // - |file_name| must not contain forward slash ('/') or backslash ('\'), and
   //   must not start with an underscore ('_').
@@ -884,7 +884,7 @@ class Host_7 {
   // session |session_id|. This can happen as the result of an Update() call
   // or some other event. If this happens as a result of a call to Update(),
   // it must be called before resolving the Update() promise. |new_expiry_time|
-  // can be 0 to represent ***REMOVED***undefined***REMOVED***. Size parameter should not include
+  // can be 0 to represent "undefined". Size parameter should not include
   // null termination.
   virtual void OnExpirationChange(const char* session_id,
                                   uint32_t session_id_size,
@@ -1018,7 +1018,7 @@ class Host_8 {
   // session |session_id|. This can happen as the result of an Update() call
   // or some other event. If this happens as a result of a call to Update(),
   // it must be called before resolving the Update() promise. |new_expiry_time|
-  // can be 0 to represent ***REMOVED***undefined***REMOVED***. Size parameter should not include
+  // can be 0 to represent "undefined". Size parameter should not include
   // null termination.
   virtual void OnExpirationChange(const char* session_id,
                                   uint32_t session_id_size,

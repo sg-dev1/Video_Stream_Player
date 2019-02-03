@@ -5,8 +5,8 @@
 #include <vector>
 #include <string>
 
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "logging.h"
+#include "common.h"
 
 class WV_ADAPTER_API AdapterInterface {
 public:

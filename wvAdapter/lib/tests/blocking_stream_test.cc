@@ -1,10 +1,10 @@
-#include ***REMOVED***blocking_stream.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***gtest/gtest.h***REMOVED***
+#include "blocking_stream.h"
+#include "logging.h"
+#include "gtest/gtest.h"
 
 #include <fstream>
 
-#include ***REMOVED***util.h***REMOVED***
+#include "util.h"
 
 #define DATA_SIZE_TO_READ 2<<27
 
@@ -13,10 +13,10 @@ class BlockingStreamTest : public ::testing::Test {
     BlockingStream stream_;
     std::vector<uint8_t> data_;
 
-    BlockingStreamTest() : stream_(***REMOVED***TestStream***REMOVED***) {}
+    BlockingStreamTest() : stream_("TestStream") {}
 
     virtual void SetUp() {
-      int length = ReadFileData(***REMOVED***/dev/urandom***REMOVED***, data_, DATA_SIZE_TO_READ);
+      int length = ReadFileData("/dev/urandom", data_, DATA_SIZE_TO_READ);
       ASSERT_GT(length, 0);
     }
 

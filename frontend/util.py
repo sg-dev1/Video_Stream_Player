@@ -26,28 +26,28 @@ headers = {
 
 
 def downloadByteRange(url, _range):
-    LOG.info(***REMOVED***Trying to download from %s byterange %s***REMOVED*** % (url, _range))
-    headers[***REMOVED***Range***REMOVED***] = ***REMOVED***bytes={0}***REMOVED***.format(_range)
+    LOG.info("Trying to download from %s byterange %s" % (url, _range))
+    headers["Range"] = "bytes={0}".format(_range)
     response = requests.get(url, headers=headers)
     if not (response.status_code == 200 or response.status_code == 206):
-        msg = ***REMOVED***Status must be 200 OK or 206 Partial Content but was %s***REMOVED*** % response.status_code
+        msg = "Status must be 200 OK or 206 Partial Content but was %s" % response.status_code
         LOG.error(msg)
         raise ApplicationException(msg)
     return response.content
 
 
 def downloadFile(url):
-    LOG.info(***REMOVED***Trying to download from %s***REMOVED*** % url)
+    LOG.info("Trying to download from %s" % url)
     response = requests.get(url, headers=headers)
     if not response.status_code == 200:
-        msg = ***REMOVED***Status must be 200 OK or 206 Partial Content but was %s***REMOVED*** % response.status_code
+        msg = "Status must be 200 OK or 206 Partial Content but was %s" % response.status_code
         LOG.error(msg)
         raise ApplicationException(msg)
     return response.content
 
 
 def saveDataIntoFile(data, file_):
-    with open(file_, ***REMOVED***wb***REMOVED***) as f:
+    with open(file_, "wb") as f:
         f.write(data)
 
 
@@ -55,16 +55,16 @@ def _fetchAudioAndVideoAdaptionSets(mpd_):
     audioAdaptionSetLst = []
     videoAdaptionSetLst = []
     for elem in mpd_.adaptionSetLst:
-        if elem.contentType == ***REMOVED***audio***REMOVED***:
+        if elem.contentType == "audio":
             audioAdaptionSetLst.append(elem)
         else:
             # video
             videoAdaptionSetLst.append(elem)
 
     if len(audioAdaptionSetLst) == 0:
-        raise ApplicationException(***REMOVED***No audio adaption set found***REMOVED***)
+        raise ApplicationException("No audio adaption set found")
     if len(videoAdaptionSetLst) == 0:
-        raise ApplicationException(***REMOVED***No video adaption set found***REMOVED***)
+        raise ApplicationException("No video adaption set found")
 
     return audioAdaptionSetLst, videoAdaptionSetLst
 
@@ -81,8 +81,8 @@ def selectVideoAndAudio(mpd_, width, height, audioAdaptionSetIndex=-1, audioInde
                 possibleRepresentations.append(rep)
         numPossibleRepresentations = len(possibleRepresentations)
         if numPossibleRepresentations <= 0:
-            LOG.error(***REMOVED***No possible video representation found with video format %d:%d***REMOVED*** % (width, height))
-            raise ApplicationException(***REMOVED***No possible video representation found!***REMOVED***)
+            LOG.error("No possible video representation found with video format %d:%d" % (width, height))
+            raise ApplicationException("No possible video representation found!")
 
         selectedVideoRepresentation = possibleRepresentations[numPossibleRepresentations - 1]
     else:
@@ -93,18 +93,18 @@ def selectVideoAndAudio(mpd_, width, height, audioAdaptionSetIndex=-1, audioInde
         else:
             if videoIndex > numRepresentations - 1:
                 videoIndex = numRepresentations - 1
-        LOG.info(***REMOVED***Using video representation # %d of adaption set # 0***REMOVED*** % videoIndex)
+        LOG.info("Using video representation # %d of adaption set # 0" % videoIndex)
         selectedVideoRepresentation = selectedVideoAdaptionSet.representationLst[videoIndex]
 
     # audio stuff
     if audioAdaptionSetIndex == -1:
         audioAdaptionSet = None
         for elem in mpd_.adaptionSetLst:
-            if elem.contentType == ***REMOVED***audio***REMOVED***:
+            if elem.contentType == "audio":
                 audioAdaptionSet = elem
                 break
         if audioAdaptionSet is None:
-            raise ApplicationException(***REMOVED***No possible audio representation found***REMOVED***)
+            raise ApplicationException("No possible audio representation found")
         selectedAudioRepresentation = audioAdaptionSet.representationLst[0]
     else:
         numAudioAdaptionSets = len(audioAdaptionSetLst)
@@ -121,11 +121,11 @@ def selectVideoAndAudio(mpd_, width, height, audioAdaptionSetIndex=-1, audioInde
         else:
             if audioIndex > numRepresentations - 1:
                 audioIndex = numRepresentations - 1
-        LOG.info(***REMOVED***Using audio representation # %d of adaption set # %d***REMOVED*** % (audioIndex, audioAdaptionSetIndex))
+        LOG.info("Using audio representation # %d of adaption set # %d" % (audioIndex, audioAdaptionSetIndex))
         selectedAudioRepresentation = selectedAudioAdaptionSet.representationLst[audioIndex]
 
-    LOG.info(***REMOVED***Selected audio: %s***REMOVED*** % selectedAudioRepresentation)
-    LOG.info(***REMOVED***Selected video: %s***REMOVED*** % selectedVideoRepresentation)
+    LOG.info("Selected audio: %s" % selectedAudioRepresentation)
+    LOG.info("Selected video: %s" % selectedVideoRepresentation)
     return selectedVideoRepresentation, selectedAudioRepresentation
 
 
@@ -134,65 +134,65 @@ def printResolutions(mpd_):
 
     idx = 0
     for adaptionSet in videoAdaptionSetLst:
-        LOG.info(***REMOVED***----------------------------------***REMOVED***)
-        LOG.info(***REMOVED***Video adaption set # %d***REMOVED*** % idx)
+        LOG.info("----------------------------------")
+        LOG.info("Video adaption set # %d" % idx)
         repIdx = 0
         for rep in adaptionSet.representationLst:
-            LOG.info(***REMOVED***\tRepresentation # %d: %s***REMOVED*** % (repIdx, rep))
+            LOG.info("\tRepresentation # %d: %s" % (repIdx, rep))
             repIdx = repIdx + 1
         idx = idx + 1
 
-    LOG.info(***REMOVED******REMOVED***)
-    LOG.info(***REMOVED***--------------------------------------------------------------------***REMOVED***)
-    LOG.info(***REMOVED******REMOVED***)
+    LOG.info("")
+    LOG.info("--------------------------------------------------------------------")
+    LOG.info("")
 
     idx = 0
     for adaptionSet in audioAdaptionSetLst:
-        LOG.info(***REMOVED***Audio adaption set # %d***REMOVED*** % idx)
+        LOG.info("Audio adaption set # %d" % idx)
         repIdx = 0
         for rep in adaptionSet.representationLst:
-            LOG.info(***REMOVED***\tRepresentation # %d: %s***REMOVED*** % (repIdx, rep))
+            LOG.info("\tRepresentation # %d: %s" % (repIdx, rep))
             repIdx = repIdx + 1
-        LOG.info(***REMOVED***----------------------------------***REMOVED***)
+        LOG.info("----------------------------------")
         idx = idx + 1
 
 
 class SettingsManager(object):
     def __init__(self):
         if not os.path.isfile(SETTINGS_FILE):
-            LOG.warning(***REMOVED***No settings file found.***REMOVED***)
+            LOG.warning("No settings file found.")
             self._settings = {}
         else:
-            with open(SETTINGS_FILE, ***REMOVED***r***REMOVED***) as f:
+            with open(SETTINGS_FILE, "r") as f:
                 self._settings = json.load(f)
 
     def save(self):
-        with open(SETTINGS_FILE, ***REMOVED***w***REMOVED***) as f:
+        with open(SETTINGS_FILE, "w") as f:
             json.dump(self._settings, f)
 
     def getCredentialsForService(self, serviceId):
-        loginKey = ***REMOVED***%s.login***REMOVED*** % serviceId
-        pwKey = ***REMOVED***%s.password***REMOVED*** % serviceId
+        loginKey = "%s.login" % serviceId
+        pwKey = "%s.password" % serviceId
         if loginKey in self._settings and pwKey in self._settings:
             return self._settings[loginKey], decode(self._settings[pwKey])
 
         return self._askForCredentials(serviceId)
 
     def _askForCredentials(self, serviceId):
-        ***REMOVED******REMOVED******REMOVED***
+        """
         Asks the user for his credentials for a certain service.
         This also serializes the credentials into the settings file.
 
         :param serviceId: A string, e.g. 'amazon'
         :return: loginName, password tuple
-        ***REMOVED******REMOVED******REMOVED***
-        LOG.info(***REMOVED***Provide your credentials for service %s***REMOVED*** % serviceId)
-        login = input(***REMOVED***Login name: ***REMOVED***)
-        password = getpass(***REMOVED***Password: ***REMOVED***)
+        """
+        LOG.info("Provide your credentials for service %s" % serviceId)
+        login = input("Login name: ")
+        password = getpass("Password: ")
         if not login or not password:
-            raise ApplicationException(***REMOVED***ERROR: Email and password must not be empty***REMOVED***)
-        self._settings[***REMOVED***%s.login***REMOVED*** % serviceId] = login
-        self._settings[***REMOVED***%s.password***REMOVED*** % serviceId] = encode(password)
+            raise ApplicationException("ERROR: Email and password must not be empty")
+        self._settings["%s.login" % serviceId] = login
+        self._settings["%s.password" % serviceId] = encode(password)
         self.save()
 
         return login, password
@@ -200,23 +200,23 @@ class SettingsManager(object):
 
 def encode(data):
     key = getMac()
-    cipher = AES.new(key, AES.MODE_CBC, ***REMOVED***\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0***REMOVED***)
+    cipher = AES.new(key, AES.MODE_CBC, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
     mod_len = len(data) % 16
     pad_len = 0
     if mod_len:
         pad_len = 16 - mod_len
-    data = ***REMOVED******REMOVED***.join([data, ***REMOVED*** ***REMOVED*** * pad_len]) # assumes that no password has spaces in the end
+    data = "".join([data, " " * pad_len]) # assumes that no password has spaces in the end
     encData = cipher.encrypt(data)
-    return base64.b64encode(encData).decode(***REMOVED***utf-8***REMOVED***)
+    return base64.b64encode(encData).decode("utf-8")
 
 
 def decode(data):
     if not data:
-        return ***REMOVED******REMOVED***
+        return ""
     key = getMac()
-    cipher = AES.new(key, AES.MODE_CBC, ***REMOVED***\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0***REMOVED***)
+    cipher = AES.new(key, AES.MODE_CBC, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
     data = base64.b64decode(data)
-    return cipher.decrypt(data).decode(***REMOVED***utf-8***REMOVED***).strip()
+    return cipher.decrypt(data).decode("utf-8").strip()
 
 
 # must be deterministic
@@ -228,7 +228,7 @@ def getMac():
 
 
 def buildWidevineInitDataString(mpdObject, streamType=STREAM_TYPE_VIDEO, adaptionSet=0, cencInitDataWv=None, cencInitDataPr=None):
-    ***REMOVED******REMOVED******REMOVED***
+    """
     Build a whole widevine init data string (CENC PSSH)
     ready to pass to widevineAdapter.CreateSessionAndGenerateRequest().
     (as it was observed by firefox)
@@ -240,16 +240,16 @@ def buildWidevineInitDataString(mpdObject, streamType=STREAM_TYPE_VIDEO, adaptio
     :param cencInitDataWv: Widevine CENC PSSH data (base64 encoded)
     :param cencInitDataPr: Playready CENC PSSH data (base64 encoded)
     :return: A binary buffer containing the CENC PSSH init data
-    ***REMOVED******REMOVED******REMOVED***
+    """
     if adaptionSet < 0:
         adaptionSet = 0
 
     if streamType == STREAM_TYPE_VIDEO:
-        contentType = ***REMOVED***video***REMOVED***
+        contentType = "video"
     elif streamType == STREAM_TYPE_AUDIO:
-        contentType = ***REMOVED***audio***REMOVED***
+        contentType = "audio"
     else:
-        raise Exception(***REMOVED***Wrong stream type %s given.***REMOVED*** % str(STREAM_TYPE))
+        raise Exception("Wrong stream type %s given." % str(STREAM_TYPE))
 
     if not cencInitDataWv:
         # cencInitDataWv = mpdObject.getFirstWidevineContentProt().cencPsshData
@@ -259,28 +259,28 @@ def buildWidevineInitDataString(mpdObject, streamType=STREAM_TYPE_VIDEO, adaptio
         cencInitDataPr = mpdObject.getPlayReadyContentProt(contentType, adaptionSet).cencPsshData
 
     if not cencInitDataPr or not cencInitDataWv:
-        raise ApplicationException(***REMOVED***Either widevine or playready init data not found***REMOVED***)
+        raise ApplicationException("Either widevine or playready init data not found")
 
     buf = []
     cencInitDataPrDecoded = base64.b64decode(cencInitDataPr)
     prInitDataLen = len(cencInitDataPrDecoded)
-    buf.append(bytes.fromhex(***REMOVED***{:08X}***REMOVED***.format(prInitDataLen + 32)))
-    buf.append(b***REMOVED***pssh***REMOVED***)
-    buf.append(bytes.fromhex(***REMOVED***00000000***REMOVED***))
-    buf.append(bytes.fromhex(***REMOVED***9A04F07998404286AB92E65BE0885F95***REMOVED***))
-    buf.append(bytes.fromhex(***REMOVED***{:08X}***REMOVED***.format(prInitDataLen)))
+    buf.append(bytes.fromhex("{:08X}".format(prInitDataLen + 32)))
+    buf.append(b"pssh")
+    buf.append(bytes.fromhex("00000000"))
+    buf.append(bytes.fromhex("9A04F07998404286AB92E65BE0885F95"))
+    buf.append(bytes.fromhex("{:08X}".format(prInitDataLen)))
     buf.append(cencInitDataPrDecoded)
 
     cencInitDataWvDecoded = base64.b64decode(cencInitDataWv)
     wvInitDatalen = len(cencInitDataWvDecoded)
-    buf.append(bytes.fromhex(***REMOVED***{:08X}***REMOVED***.format(wvInitDatalen + 32)))
-    buf.append(b***REMOVED***pssh***REMOVED***)
-    buf.append(bytes.fromhex(***REMOVED***00000000***REMOVED***))
-    buf.append(bytes.fromhex(***REMOVED***EDEF8BA979D64ACEA3C827DCD51D21ED***REMOVED***))
-    buf.append(bytes.fromhex(***REMOVED***{:08X}***REMOVED***.format(wvInitDatalen)))
+    buf.append(bytes.fromhex("{:08X}".format(wvInitDatalen + 32)))
+    buf.append(b"pssh")
+    buf.append(bytes.fromhex("00000000"))
+    buf.append(bytes.fromhex("EDEF8BA979D64ACEA3C827DCD51D21ED"))
+    buf.append(bytes.fromhex("{:08X}".format(wvInitDatalen)))
     buf.append(cencInitDataWvDecoded)
 
-    return b***REMOVED******REMOVED***.join(buf)
+    return b"".join(buf)
 
 
 class ApplicationException(Exception):

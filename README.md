@@ -25,11 +25,14 @@ On the Raspberry Pi 3 Arch Linux and Raspbian where used.
 # basic build tools and utility
 sudo pacman -S cmake git gcc wget tar
 # dependencies
-sudo pacman -S python-lxml    # better use the arch package since there were compile errors
+sudo pacman -S python python2 python-lxml
 sudo pacman -S python-pip && sudo pip install -r requirements.txt
+sudo sudo pacman -S python2-pip && sudo pip2 install mechanize bs4
 sudo pacman -S nss            # required by libwidevinecdm.so
-# TODO ffmpeg (libav)
-# TODO SDL2
+# ffmpeg (libav)
+sudo pacman -S ffmpeg
+# SDL2
+sudo pacman -S sdl2
 ```
 
 ### Get Source Code and Build it
@@ -51,13 +54,14 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 4
 
 # Build the library
-cd wvAdapter/lib
+cd ../../../wvAdapter/lib
 mkdir build
 cd build
 cmake ..
 make -j 4
 
 # Build and install the python extension
+cd ../../..
 sudo python setup.py install
 ```
 
@@ -88,7 +92,7 @@ $> ./prime_video_cli https://www.amazon.de/gp/video/detail/B00ET0K3MM/ref=atv_dp
 [   INFO: 01/26/2019 11:32:07 AM] 9. Veränderungen: [AmazonMovieEntry] asin=B00EVB2UN4,B00EVB2W96, title=9. Veränderungen, imgUrl=, synopsisText=, synopsisDict={}
 [   INFO: 01/26/2019 11:32:07 AM]
 
-# e.g. select ***REMOVED***1. Initiationsriten***REMOVED*** with ASIN 'B00FGLE0TK'
+# e.g. select "1. Initiationsriten" with ASIN 'B00FGLE0TK'
 $> ./prime_video_cli B00FGLE0TK
 
 [   INFO: 01/26/2019 11:33:24 AM] Launching rendering script for ASIN B00FGLE0TK

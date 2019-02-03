@@ -1,10 +1,10 @@
 #ifndef MP4_STREAM_H_
 #define MP4_STREAM_H_
 
-#include ***REMOVED***content_decryption_module.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "content_decryption_module.h"
+#include "common.h"
 
-#include ***REMOVED***Ap4CommonEncryption.h***REMOVED*** // AP4_CencSampleInfoTable
+#include "Ap4CommonEncryption.h" // AP4_CencSampleInfoTable
 
 #include <string>
 #include <vector>

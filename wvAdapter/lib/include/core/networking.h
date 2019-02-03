@@ -1,7 +1,7 @@
 #ifndef NETWORKING_H_
 #define NETWORKING_H_
 
-#include ***REMOVED***common.h***REMOVED***
+#include "common.h"
 
 #include <string>
 #include <memory>

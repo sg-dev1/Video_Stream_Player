@@ -1,23 +1,23 @@
-#include ***REMOVED***gtest/gtest.h***REMOVED***
+#include "gtest/gtest.h"
 #include <fstream>
 #include <memory>
 
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***util.h***REMOVED***
-#include ***REMOVED***mp4_stream.h***REMOVED***
-#include ***REMOVED***blocking_stream.h***REMOVED***
-#include ***REMOVED***components.h***REMOVED***
+#include "logging.h"
+#include "util.h"
+#include "mp4_stream.h"
+#include "blocking_stream.h"
+#include "components.h"
 
-#define AUDIO_DATA_FILE_PATH ***REMOVED***data/encrypted/BigBuckBunny_fragmented_1280x720/audio***REMOVED***
+#define AUDIO_DATA_FILE_PATH "data/encrypted/BigBuckBunny_fragmented_1280x720/audio"
 
 class MP4AudioStreamTest : public ::testing::Test {
   protected:
     MP4AudioStreamTest() {
       std::string rootPath = __DIR__ + std::string(AUDIO_DATA_FILE_PATH);
-      initPath_ = rootPath + std::string(***REMOVED***/init.mp4***REMOVED***);
-      seg1Path_ = rootPath + std::string(***REMOVED***/seg-1.m4s***REMOVED***);
-      dummyMediaFileUrl_ = std::string(***REMOVED***www.example.com***REMOVED***);
-      dummyRangeList_ = std::vector<std::string>({***REMOVED***1-100***REMOVED***, ***REMOVED***101-200***REMOVED***, ***REMOVED***201-300***REMOVED***});
+      initPath_ = rootPath + std::string("/init.mp4");
+      seg1Path_ = rootPath + std::string("/seg-1.m4s");
+      dummyMediaFileUrl_ = std::string("www.example.com");
+      dummyRangeList_ = std::vector<std::string>({"1-100", "101-200", "201-300"});
     }
 
     MP4AudioStream stream_;
@@ -57,17 +57,17 @@ TEST_F(MP4AudioStreamTest, Init) {
 
 //////////////////////////////////////////////////////
 
-#define VIDEO_DATA_FILE_PATH ***REMOVED***data/encrypted/jellyfish-fragmented_1920x1080/video/avc1***REMOVED***
+#define VIDEO_DATA_FILE_PATH "data/encrypted/jellyfish-fragmented_1920x1080/video/avc1"
 
 class MP4VideoStreamTest : public ::testing::Test {
   protected:
     MP4VideoStreamTest() {
       std::string rootPath = __DIR__ + std::string(VIDEO_DATA_FILE_PATH);
-      initPath_ = rootPath + std::string(***REMOVED***/init.mp4***REMOVED***);
-      seg1Path_ = rootPath + std::string(***REMOVED***/seg-1.m4s***REMOVED***);
-      seg2Path_ = rootPath + std::string(***REMOVED***/seg-2.m4s***REMOVED***);
-      dummyMediaFileUrl_ = std::string(***REMOVED***www.example.com***REMOVED***);
-      dummyRangeList_ = std::vector<std::string>({***REMOVED***1-100***REMOVED***, ***REMOVED***101-200***REMOVED***, ***REMOVED***201-300***REMOVED***});
+      initPath_ = rootPath + std::string("/init.mp4");
+      seg1Path_ = rootPath + std::string("/seg-1.m4s");
+      seg2Path_ = rootPath + std::string("/seg-2.m4s");
+      dummyMediaFileUrl_ = std::string("www.example.com");
+      dummyRangeList_ = std::vector<std::string>({"1-100", "101-200", "201-300"});
 
       inputStream_ = wvAdapterLib::GetVideoNetStream();
     }
@@ -83,7 +83,7 @@ class MP4VideoStreamTest : public ::testing::Test {
 };
 
 TEST_F(MP4VideoStreamTest, Init) {
-  // DEBUG_PRINT(***REMOVED***initPath: ***REMOVED*** << initPath_);
+  // DEBUG_PRINT("initPath: " << initPath_);
   std::vector<uint8_t> data;
   int length = ReadFileData(initPath_, data);
   ASSERT_GT(length, 0);

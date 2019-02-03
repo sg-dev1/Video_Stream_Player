@@ -1,9 +1,9 @@
 #ifndef MMAL_VIDEO_RENDERER_
 #define MMAL_VIDEO_RENDERER_
 
-#include ***REMOVED***mmal_renderer.h***REMOVED***
-#include ***REMOVED***video_renderer.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "mmal_renderer.h"
+#include "video_renderer.h"
+#include "common.h"
 
 class WV_ADAPTER_TEST_API MmalVideoRenderer : public MmalRenderer {
 public:

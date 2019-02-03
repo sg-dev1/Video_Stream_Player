@@ -1,9 +1,9 @@
 #ifndef MMAL_RENDERER_
 #define MMAL_RENDERER_
 
-#include ***REMOVED***renderer.h***REMOVED***
-#include ***REMOVED***thread_utils.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "renderer.h"
+#include "thread_utils.h"
+#include "common.h"
 
 #include <interface/mmal/mmal.h>
 #include <interface/mmal/util/mmal_default_components.h>

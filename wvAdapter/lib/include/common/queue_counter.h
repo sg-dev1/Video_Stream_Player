@@ -6,7 +6,7 @@
 #include <memory>
 #include <iomanip>
 
-#include ***REMOVED***logging.h***REMOVED***
+#include "logging.h"
 
 struct QueueCounterSummary{
   uint32_t counter;
@@ -15,8 +15,8 @@ struct QueueCounterSummary{
 
   std::string toString() {
     std::stringstream ss;
-    ss << ***REMOVED***counter = ***REMOVED*** <<  counter << ***REMOVED***, filled = ***REMOVED*** << std::setprecision(3) <<
-         percentFilled * 100 << ***REMOVED*** %, ***REMOVED*** << ***REMOVED*** memoryUsage = ***REMOVED*** << memoryUsage / 1000000 << ***REMOVED*** MB (***REMOVED*** << memoryUsage << ***REMOVED*** bytes).***REMOVED***;
+    ss << "counter = " <<  counter << ", filled = " << std::setprecision(3) <<
+         percentFilled * 100 << " %, " << " memoryUsage = " << memoryUsage / 1000000 << " MB (" << memoryUsage << " bytes).";
     return ss.str();
   }
 };

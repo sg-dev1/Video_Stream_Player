@@ -1,4 +1,4 @@
-#include ***REMOVED***gtest/gtest.h***REMOVED***
+#include "gtest/gtest.h"
 #include <chrono>
 #include <string>
 #include <thread>
@@ -6,15 +6,15 @@
 #include <interface/mmal/mmal_logging.h>
 #include <interface/vcos/vcos_logging.h>
 
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***util.h***REMOVED***
+#include "logging.h"
+#include "util.h"
 
 // comment this to disable audio and video rendering in separate threads
 // for the MmalAudioVideoRenderingTest test case
 #define _MMAL_TEST_RENDER_IN_OWN_THREAD
 
-#include ***REMOVED***mmal_audio_renderer.h***REMOVED***
-#define AUDIO_TEST_DATA_PATH ***REMOVED***data/renderer/priv/audio/***REMOVED***
+#include "mmal_audio_renderer.h"
+#define AUDIO_TEST_DATA_PATH "data/renderer/priv/audio/"
 
 class MmalAudioRendererTest : public ::testing::Test {
 protected:
@@ -30,9 +30,9 @@ TEST_F(MmalAudioRendererTest, DISABLED_Render1) {
   std::vector<std::string> audioFiles;
   bool ret = GetFilesInDir(audioDir_, audioFiles);
   ASSERT_TRUE(ret);
-  ASSERT_GT(audioFiles.size(), 0) << ***REMOVED***No audio test files to render found. It ***REMOVED***
-                                     ***REMOVED***seems that you have first to generated ***REMOVED***
-                                     ***REMOVED***some.***REMOVED***;
+  ASSERT_GT(audioFiles.size(), 0) << "No audio test files to render found. It "
+                                     "seems that you have first to generated "
+                                     "some.";
 
   std::sort(audioFiles.begin(), audioFiles.end());
 
@@ -55,13 +55,13 @@ TEST_F(MmalAudioRendererTest, DISABLED_Render1) {
     std::chrono::steady_clock::time_point startTime =
         std::chrono::steady_clock::now();
     std::string currFilePath = audioDir_ + audioFiles[i];
-    // DEBUG_PRINT(***REMOVED***Rendering ***REMOVED*** << currFilePath);
+    // DEBUG_PRINT("Rendering " << currFilePath);
 
     std::vector<uint8_t> data;
     int r = ReadFileData(currFilePath, data);
     ASSERT_GT(r, 0);
 
-    // DEBUG_PRINT(***REMOVED***# ***REMOVED*** << r << ***REMOVED*** bytes read from ***REMOVED*** << currFilePath);
+    // DEBUG_PRINT("# " << r << " bytes read from " << currFilePath);
 
     AUDIO_FRAME frame;
     frame.channels = cfg.channels;
@@ -71,8 +71,8 @@ TEST_F(MmalAudioRendererTest, DISABLED_Render1) {
     frame.bufferSize = r; // data.size();
     frame.frameDuration = frameDuration;
 
-    // DEBUG_PRINT(***REMOVED***Going to render frame with ***REMOVED*** << frame.bufferSize << ***REMOVED***
-    // bytes.***REMOVED***);
+    // DEBUG_PRINT("Going to render frame with " << frame.bufferSize << "
+    // bytes.");
 
     renderer_.Render(&frame);
 
@@ -81,7 +81,7 @@ TEST_F(MmalAudioRendererTest, DISABLED_Render1) {
     std::chrono::duration<double> diff = currTime - startTime;
     double timeToSleepDbl = frameDuration - diff.count();
     int timeToSleepMicros = timeToSleepDbl * 1000000;
-    // INFO_PRINT(***REMOVED***Sleeping for ***REMOVED*** << timeToSleepMicros << ***REMOVED*** microseconds.***REMOVED***);
+    // INFO_PRINT("Sleeping for " << timeToSleepMicros << " microseconds.");
     std::this_thread::sleep_for(std::chrono::microseconds(timeToSleepMicros));
   }
   renderer_.Close();
@@ -89,8 +89,8 @@ TEST_F(MmalAudioRendererTest, DISABLED_Render1) {
 
 //////////////////////////////////////////////////////
 
-#include ***REMOVED***mmal_video_renderer.h***REMOVED***
-#define VIDEO_TEST_DATA_PATH ***REMOVED***data/renderer/priv/video/***REMOVED***
+#include "mmal_video_renderer.h"
+#define VIDEO_TEST_DATA_PATH "data/renderer/priv/video/"
 
 class MmalVideoRendererTest : public ::testing::Test {
 protected:
@@ -106,9 +106,9 @@ TEST_F(MmalVideoRendererTest, DISABLED_Render1) {
   std::vector<std::string> videoFiles;
   bool ret = GetFilesInDir(videoDir_, videoFiles);
   ASSERT_TRUE(ret);
-  ASSERT_GT(videoFiles.size(), 0) << ***REMOVED***No video test files to render found. It ***REMOVED***
-                                     ***REMOVED***seems that you have first to generated ***REMOVED***
-                                     ***REMOVED***some.***REMOVED***;
+  ASSERT_GT(videoFiles.size(), 0) << "No video test files to render found. It "
+                                     "seems that you have first to generated "
+                                     "some.";
 
   std::sort(videoFiles.begin(), videoFiles.end());
 
@@ -122,9 +122,9 @@ TEST_F(MmalVideoRendererTest, DISABLED_Render1) {
   ASSERT_TRUE(ret);
 
   VIDEO_FORMAT_ENUM encoding;
-  if (format == ***REMOVED***I420***REMOVED***) {
+  if (format == "I420") {
     encoding = VIDEO_FORMAT_ENUM::kI420;
-  } else { // format == ***REMOVED***Yv12***REMOVED***
+  } else { // format == "Yv12"
     encoding = VIDEO_FORMAT_ENUM::kYv12;
   }
 
@@ -139,13 +139,13 @@ TEST_F(MmalVideoRendererTest, DISABLED_Render1) {
     std::chrono::steady_clock::time_point startTime =
         std::chrono::steady_clock::now();
     std::string currFilePath = videoDir_ + videoFiles[i];
-    // DEBUG_PRINT(***REMOVED***Rendering ***REMOVED*** << currFilePath);
+    // DEBUG_PRINT("Rendering " << currFilePath);
 
     std::vector<uint8_t> data;
     int r = ReadFileData(currFilePath, data);
     ASSERT_GT(r, 0);
 
-    // DEBUG_PRINT(***REMOVED***# ***REMOVED*** << r << ***REMOVED*** bytes read from ***REMOVED*** << currFilePath);
+    // DEBUG_PRINT("# " << r << " bytes read from " << currFilePath);
 
     VIDEO_FRAME frame;
 
@@ -162,8 +162,8 @@ TEST_F(MmalVideoRendererTest, DISABLED_Render1) {
     frame.bufferSize = r; // data.size();
     frame.frameDuration = frameDuration;
 
-    // DEBUG_PRINT(***REMOVED***Going to render frame with ***REMOVED*** << frame.bufferSize << ***REMOVED***
-    // bytes.***REMOVED***);
+    // DEBUG_PRINT("Going to render frame with " << frame.bufferSize << "
+    // bytes.");
 
     renderer_.Render(&frame);
 
@@ -172,7 +172,7 @@ TEST_F(MmalVideoRendererTest, DISABLED_Render1) {
     std::chrono::duration<double> diff = currTime - startTime;
     double timeToSleepDbl = frameDuration - diff.count();
     int timeToSleepMicros = timeToSleepDbl * 1000000;
-    // INFO_PRINT(***REMOVED***Sleeping for ***REMOVED*** << timeToSleepMicros << ***REMOVED*** microseconds.***REMOVED***);
+    // INFO_PRINT("Sleeping for " << timeToSleepMicros << " microseconds.");
     std::this_thread::sleep_for(std::chrono::microseconds(timeToSleepMicros));
   }
   renderer_.Close();
@@ -180,7 +180,7 @@ TEST_F(MmalVideoRendererTest, DISABLED_Render1) {
 
 //////////////////////////////////////////////////////
 
-#include ***REMOVED***clock.h***REMOVED***
+#include "clock.h"
 
 class MmalAudioVideoRenderingTest : public ::testing::Test {
 protected:
@@ -214,13 +214,13 @@ public:
 
 private:
   void Run() {
-    DEBUG_PRINT(***REMOVED***Starting test render audio thread...***REMOVED***);
+    DEBUG_PRINT("Starting test render audio thread...");
 
     for (int i = 0; i < audioFiles_.size(); i++) {
       clock_->SetStartTime(Clock::MEDIA_TYPE::AUDIO);
 
       std::string currFilePath = audioDir_ + audioFiles_[i];
-      // DEBUG_PRINT(***REMOVED***Rendering ***REMOVED*** << currFilePath);
+      // DEBUG_PRINT("Rendering " << currFilePath);
 
       std::vector<uint8_t> data;
       int r = ReadFileData(currFilePath, data);
@@ -236,7 +236,7 @@ private:
       data.clear();
     }
 
-    DEBUG_PRINT(***REMOVED***Finishing test render audio thread***REMOVED***);
+    DEBUG_PRINT("Finishing test render audio thread");
   }
 
   std::thread thread_;
@@ -265,13 +265,13 @@ public:
 
 private:
   void Run() {
-    DEBUG_PRINT(***REMOVED***Starting test render video thread...***REMOVED***);
+    DEBUG_PRINT("Starting test render video thread...");
 
     for (int i = 0; i < videoFiles_.size(); i++) {
       clock_->SetStartTime(Clock::MEDIA_TYPE::VIDEO);
 
       std::string currFilePath = videoDir_ + videoFiles_[i];
-      // DEBUG_PRINT(***REMOVED***Rendering ***REMOVED*** << currFilePath);
+      // DEBUG_PRINT("Rendering " << currFilePath);
 
       std::vector<uint8_t> data;
       int r = ReadFileData(currFilePath, data);
@@ -287,7 +287,7 @@ private:
       data.clear();
     }
 
-    DEBUG_PRINT(***REMOVED***Finishing test render video thread***REMOVED***);
+    DEBUG_PRINT("Finishing test render video thread");
   }
 
   std::thread thread_;
@@ -306,16 +306,16 @@ TEST_F(MmalAudioVideoRenderingTest, Render1) {
   std::vector<std::string> audioFiles;
   bool ret = GetFilesInDir(audioDir_, audioFiles);
   ASSERT_TRUE(ret);
-  ASSERT_GT(audioFiles.size(), 0) << ***REMOVED***No audio test files to render found. It ***REMOVED***
-                                     ***REMOVED***seems that you have first to generated ***REMOVED***
-                                     ***REMOVED***some.***REMOVED***;
+  ASSERT_GT(audioFiles.size(), 0) << "No audio test files to render found. It "
+                                     "seems that you have first to generated "
+                                     "some.";
 
   std::vector<std::string> videoFiles;
   ret = GetFilesInDir(videoDir_, videoFiles);
   ASSERT_TRUE(ret);
-  ASSERT_GT(videoFiles.size(), 0) << ***REMOVED***No video test files to render found. It ***REMOVED***
-                                     ***REMOVED***seems that you have first to generated ***REMOVED***
-                                     ***REMOVED***some.***REMOVED***;
+  ASSERT_GT(videoFiles.size(), 0) << "No video test files to render found. It "
+                                     "seems that you have first to generated "
+                                     "some.";
 
   std::sort(audioFiles.begin(), audioFiles.end());
   std::sort(videoFiles.begin(), videoFiles.end());
@@ -346,9 +346,9 @@ TEST_F(MmalAudioVideoRenderingTest, Render1) {
   ASSERT_TRUE(ret);
 
   VIDEO_FORMAT_ENUM encoding;
-  if (format == ***REMOVED***I420***REMOVED***) {
+  if (format == "I420") {
     encoding = VIDEO_FORMAT_ENUM::kI420;
-  } else { // format == ***REMOVED***Yv12***REMOVED***
+  } else { // format == "Yv12"
     encoding = VIDEO_FORMAT_ENUM::kYv12;
   }
 
@@ -434,7 +434,7 @@ TEST_F(MmalAudioVideoRenderingTest, Render1) {
     std::chrono::duration<double> diff = currTime - startTime;
     double timeToSleepDbl = frameDuration - diff.count();
     int timeToSleepMicros = timeToSleepDbl * 1000000;
-    INFO_PRINT(***REMOVED***Sleeping for ***REMOVED*** << timeToSleepMicros << ***REMOVED*** microseconds.***REMOVED***);
+    INFO_PRINT("Sleeping for " << timeToSleepMicros << " microseconds.");
     std::this_thread::sleep_for(std::chrono::microseconds(timeToSleepMicros));
   }
 #endif

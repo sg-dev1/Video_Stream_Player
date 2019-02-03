@@ -1,17 +1,17 @@
-#include ***REMOVED***components.h***REMOVED***
+#include "components.h"
 
 #ifdef RASPBERRY_PI
-#include ***REMOVED***alsa_audio_renderer.h***REMOVED***
-#include ***REMOVED***mmal_audio_renderer.h***REMOVED***
-#include ***REMOVED***mmal_video_renderer.h***REMOVED***
-#include ***REMOVED***omx_audio_renderer.h***REMOVED***
+#include "alsa_audio_renderer.h"
+#include "mmal_audio_renderer.h"
+#include "mmal_video_renderer.h"
+#include "omx_audio_renderer.h"
 #endif
 
 #if defined LIBSDL_RENDERER && !defined RASPBERRY_PI
-#include ***REMOVED***sdl_audio_renderer.h***REMOVED***
-#include ***REMOVED***sdl_video_renderer.h***REMOVED***
+#include "sdl_audio_renderer.h"
+#include "sdl_video_renderer.h"
 #else
-#include ***REMOVED***default_renderer.h***REMOVED***
+#include "default_renderer.h"
 #endif
 
 namespace wvAdapterLib {

@@ -1,19 +1,19 @@
 #ifndef ASSERTION_H_
 #define ASSERTION_H_
 
-#include ***REMOVED***constants.h***REMOVED***
+#include "constants.h"
 
 #include <stdexcept>
 
 #define ASSERT_MSG(x, msg)                                                     \
   do {                                                                         \
     if (!(x)) {                                                                \
-      ERROR_PRINT(***REMOVED***ASSERTION ERROR: following condition violated: ***REMOVED*** << #x      \
-                  << ***REMOVED***. ***REMOVED*** << msg);                                             \
-      throw std::runtime_error(***REMOVED***assertion error***REMOVED***);                             \
+      ERROR_PRINT("ASSERTION ERROR: following condition violated: " << #x      \
+                  << ". " << msg);                                             \
+      throw std::runtime_error("assertion error");                             \
     }                                                                          \
   } while (false);
-#define ASSERT(x) ASSERT_MSG(x, ***REMOVED******REMOVED***)
+#define ASSERT(x) ASSERT_MSG(x, "")
 
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
 #define DEBUG_ASSERT_MSG(x, msg) ASSERT_MSG(x, msg)

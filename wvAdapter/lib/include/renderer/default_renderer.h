@@ -1,7 +1,7 @@
 #ifndef DEFAULT_RENDERER_
 #define DEFAULT_RENDERER_
 
-#include ***REMOVED***renderer.h***REMOVED***
+#include "renderer.h"
 
 class DefaultRenderer : public Renderer {
 public:

@@ -2,7 +2,7 @@ from distutils.core import setup, Extension
 import os
 
 # force build environ to use g++
-os.environ[***REMOVED***CXX***REMOVED***] = ***REMOVED***g++***REMOVED***
+os.environ["CXX"] = "g++"
 
 EXTRA_COMPILE_ARGS = ['-std=c++11']
 DEFINE_MACROS = []
@@ -42,29 +42,29 @@ import subprocess
 from detect_host_arch import detectHostArch
 from pi_version import pi_version
 
-LIBRARY_DIR = ***REMOVED***/usr/local/lib***REMOVED***
+LIBRARY_DIR = "/usr/local/lib"
 hostArch = detectHostArch()
 piVersion = pi_version()
 
 rootDir = os.path.dirname(os.path.realpath(__file__))
-print (***REMOVED***Using root dir %s***REMOVED*** % rootDir)
-#rootDir = os.path.join(relativeRootDir, ***REMOVED***..***REMOVED***, ***REMOVED***..***REMOVED***)
-if hostArch == ***REMOVED***arm***REMOVED***:
-    widevineCdmBinaryPath = os.path.join(rootDir, ***REMOVED***lib***REMOVED***, ***REMOVED***WidevineCdm***REMOVED***, ***REMOVED***arm***REMOVED***, ***REMOVED***libwidevinecdm.so***REMOVED***)
-elif hostArch == ***REMOVED***x64***REMOVED***:
-    widevineCdmBinaryPath = os.path.join(rootDir, ***REMOVED***lib***REMOVED***, ***REMOVED***WidevineCdm***REMOVED***, ***REMOVED***x86_64***REMOVED***, ***REMOVED***libwidevinecdm.so***REMOVED***)
+print ("Using root dir %s" % rootDir)
+#rootDir = os.path.join(relativeRootDir, "..", "..")
+if hostArch == "arm":
+    widevineCdmBinaryPath = os.path.join(rootDir, "lib", "WidevineCdm", "arm", "libwidevinecdm.so")
+elif hostArch == "x64":
+    widevineCdmBinaryPath = os.path.join(rootDir, "lib", "WidevineCdm", "x86_64", "libwidevinecdm.so")
 else:
-    print (***REMOVED***Error: Host architecture {0} is not supported.***REMOVED***.format(hostArch))
+    print ("Error: Host architecture {0} is not supported.".format(hostArch))
     sys.exit(1)
 
 # copy files
 assert( not subprocess.check_call(
-    [***REMOVED***cp***REMOVED***, widevineCdmBinaryPath, LIBRARY_DIR], stdout=sys.stdout, stderr=sys.stderr) )
+    ["cp", widevineCdmBinaryPath, LIBRARY_DIR], stdout=sys.stdout, stderr=sys.stderr) )
 
 assert( not subprocess.check_call(
-    [***REMOVED***cp***REMOVED***, ***REMOVED***%s/lib/Bento4/cmakebuild/libap4_shared.so***REMOVED*** % rootDir, LIBRARY_DIR],
+    ["cp", "%s/lib/Bento4/cmakebuild/libap4_shared.so" % rootDir, LIBRARY_DIR],
     stdout=sys.stdout, stderr=sys.stderr) )
 
 assert( not subprocess.check_call(
-    [***REMOVED***cp***REMOVED***, ***REMOVED***%s/wvAdapter/lib/build/libWvAdapter.so***REMOVED*** % rootDir, LIBRARY_DIR],
+    ["cp", "%s/wvAdapter/lib/build/libWvAdapter.so" % rootDir, LIBRARY_DIR],
     stdout=sys.stdout, stderr=sys.stderr) )

@@ -3,15 +3,15 @@
 
 #include <memory>
 
-#include ***REMOVED***common.h***REMOVED***
-#include ***REMOVED***audio_renderer.h***REMOVED***
-#include ***REMOVED***video_renderer.h***REMOVED***
-#include ***REMOVED***blocking_stream.h***REMOVED***
-#include ***REMOVED***mp4_stream.h***REMOVED***
-#include ***REMOVED***widevineAdapter.h***REMOVED***
-#include ***REMOVED***blocking_queue.h***REMOVED***
-#include ***REMOVED***queue_counter.h***REMOVED***
-#include ***REMOVED***time_logger.h***REMOVED***
+#include "common.h"
+#include "audio_renderer.h"
+#include "video_renderer.h"
+#include "blocking_stream.h"
+#include "mp4_stream.h"
+#include "widevineAdapter.h"
+#include "blocking_queue.h"
+#include "queue_counter.h"
+#include "time_logger.h"
 
 namespace wvAdapterLib {
   const WV_ADAPTER_TEST_API std::shared_ptr<WidevineAdapter>& GetVideoAdapter() noexcept;

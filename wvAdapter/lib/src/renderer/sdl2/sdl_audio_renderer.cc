@@ -1,6 +1,6 @@
-#include ***REMOVED***sdl_audio_renderer.h***REMOVED***
-#include ***REMOVED***audio_renderer.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "sdl_audio_renderer.h"
+#include "audio_renderer.h"
+#include "logging.h"
 
 #define SDL_AUDIO_BUFFER_SIZE 4096
 
@@ -18,7 +18,7 @@ bool SDLAudioRenderer::Open(void *cfg) {
 
   audioDeviceId_ = SDL_OpenAudioDevice(nullptr, 0, &wanted, &obtained, 0);
   if (!audioDeviceId_) {
-    ERROR_PRINT(***REMOVED***Failed to open audio: ***REMOVED*** << SDL_GetError());
+    ERROR_PRINT("Failed to open audio: " << SDL_GetError());
     return false;
   }
 
@@ -40,7 +40,7 @@ void SDLAudioRenderer::Render(FRAME *frame) {
   std::unique_lock<std::mutex> lock(lock_);
   int ret = SDL_QueueAudio(audioDeviceId_, frame->buffer, frame->bufferSize);
   if (ret != 0) {
-    ERROR_PRINT(***REMOVED***Failed to copy audio frame: ***REMOVED*** << SDL_GetError()
-                                               << ***REMOVED***, code= ***REMOVED*** << ret);
+    ERROR_PRINT("Failed to copy audio frame: " << SDL_GetError()
+                                               << ", code= " << ret);
   }
 }

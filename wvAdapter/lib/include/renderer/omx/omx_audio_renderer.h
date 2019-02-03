@@ -1,11 +1,11 @@
 #ifndef OMX_AUDIO_RENDERER_
 #define OMX_AUDIO_RENDERER_
 
-#include ***REMOVED***audio_renderer.h***REMOVED***
-#include ***REMOVED***renderer.h***REMOVED***
+#include "audio_renderer.h"
+#include "renderer.h"
 
-extern ***REMOVED***C***REMOVED*** {
-#include ***REMOVED***ilclient.h***REMOVED***
+extern "C" {
+#include "ilclient.h"
 #include <OMX_Component.h>
 #include <OMX_Core.h>
 }
@@ -23,12 +23,12 @@ public:
 
 private:
   bool SetAudioRendererInputFormat(AudioRendererConfig *cfg);
-  /* For the RPi name can be ***REMOVED***hdmi***REMOVED*** or ***REMOVED***local***REMOVED*** */
+  /* For the RPi name can be "hdmi" or "local" */
   bool SetOutputDevice(const char *name);
   void ReadIntoBufferAndEmpty(OMX_BUFFERHEADERTYPE *header, FRAME *frame);
 
-  std::string name_ = std::string(***REMOVED***audio_render***REMOVED***);
-  std::string outputDevice_ = std::string(***REMOVED***hdmi***REMOVED***);
+  std::string name_ = std::string("audio_render");
+  std::string outputDevice_ = std::string("hdmi");
   std::mutex lock_;
   int portIndex_ = 100;
 

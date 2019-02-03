@@ -1,9 +1,9 @@
-#include ***REMOVED***audio_renderer.h***REMOVED***
+#include "audio_renderer.h"
 
 std::string GetAudioFrameString(const AUDIO_FRAME &frame) {
-  return ***REMOVED***channels=***REMOVED*** + std::to_string(frame.channels) +
-         ***REMOVED***_sampleSize=***REMOVED*** + std::to_string(frame.sampleSize) +
-         ***REMOVED***_samplingRate=***REMOVED*** + std::to_string(frame.samplingRate) +
-         ***REMOVED***_timestamp=***REMOVED*** + std::to_string(frame.timestamp) +
-         ***REMOVED***_frameDuration=***REMOVED*** + std::to_string(frame.frameDuration);
+  return "channels=" + std::to_string(frame.channels) +
+         "_sampleSize=" + std::to_string(frame.sampleSize) +
+         "_samplingRate=" + std::to_string(frame.samplingRate) +
+         "_timestamp=" + std::to_string(frame.timestamp) +
+         "_frameDuration=" + std::to_string(frame.frameDuration);
 }

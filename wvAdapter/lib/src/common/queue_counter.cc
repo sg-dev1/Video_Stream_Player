@@ -1,5 +1,5 @@
-#include ***REMOVED***queue_counter.h***REMOVED***
-#include ***REMOVED***logging.h***REMOVED***
+#include "queue_counter.h"
+#include "logging.h"
 
 #include <functional>
 #include <unordered_map>
@@ -39,14 +39,14 @@ void QueueCounter::Impl::CounterOp(const std::string &name, uint32_t memoryUsage
   std::unique_lock<std::mutex> lock(lock_);
   auto iter = queueNameInfoMapping_.find(name);
   if (iter != queueNameInfoMapping_.end()) {
-//    INFO_PRINT(***REMOVED***Queue[***REMOVED*** << name << ***REMOVED***] before inc counter: counterval=***REMOVED*** << iter->second->counterVal << ***REMOVED***, memoryusage=***REMOVED*** << iter->second->totalMemoryUsage);
+//    INFO_PRINT("Queue[" << name << "] before inc counter: counterval=" << iter->second->counterVal << ", memoryusage=" << iter->second->totalMemoryUsage);
     Op op;
     iter->second->counterVal = op(iter->second->counterVal, 1);
     iter->second->totalMemoryUsage = op(iter->second->totalMemoryUsage, memoryUsage);
 
-//    INFO_PRINT(***REMOVED***Queue[***REMOVED*** << name << ***REMOVED***] after inc counter: counterval=***REMOVED*** << iter->second->counterVal << ***REMOVED***, memoryusage=***REMOVED*** << iter->second->totalMemoryUsage);
+//    INFO_PRINT("Queue[" << name << "] after inc counter: counterval=" << iter->second->counterVal << ", memoryusage=" << iter->second->totalMemoryUsage);
   } else {
-    WARN_PRINT(***REMOVED***Queue with name ***REMOVED*** << name << ***REMOVED*** could not be found! Maybe you forgot to call registerQueue()?***REMOVED***);
+    WARN_PRINT("Queue with name " << name << " could not be found! Maybe you forgot to call registerQueue()?");
   }
 }
 
@@ -67,7 +67,7 @@ void QueueCounter::Impl::GetSummary(const std::string &name, QueueCounterSummary
     summary.percentFilled = static_cast<float>(iter->second->counterVal) /
         static_cast<float>(iter->second->upperBound);
   } else {
-    WARN_PRINT(***REMOVED***Queue with name ***REMOVED*** << name << ***REMOVED*** could not be found! Maybe you forgot to call registerQueue()?***REMOVED***);
+    WARN_PRINT("Queue with name " << name << " could not be found! Maybe you forgot to call registerQueue()?");
     summary.counter = 0;
     summary.percentFilled = 0.0;
     summary.memoryUsage = 0;

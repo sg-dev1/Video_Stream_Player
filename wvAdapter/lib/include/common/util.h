@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include ***REMOVED***common.h***REMOVED***
+#include "common.h"
 
 #define __FILENAME__                                                           \
   (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)

@@ -1,9 +1,9 @@
 #ifndef MMAL_AUDIO_RENDERER_
 #define MMAL_AUDIO_RENDERER_
 
-#include ***REMOVED***audio_renderer.h***REMOVED***
-#include ***REMOVED***mmal_renderer.h***REMOVED***
-#include ***REMOVED***common.h***REMOVED***
+#include "audio_renderer.h"
+#include "mmal_renderer.h"
+#include "common.h"
 
 class WV_ADAPTER_TEST_API MmalAudioRenderer : public MmalRenderer {
 public:

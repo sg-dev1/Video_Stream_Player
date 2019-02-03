@@ -1,7 +1,7 @@
-#include ***REMOVED***time_logger.h***REMOVED***
+#include "time_logger.h"
 
-#include ***REMOVED***logging.h***REMOVED***
-#include ***REMOVED***constants.h***REMOVED***
+#include "logging.h"
+#include "constants.h"
 
 #include <array>
 #include <unordered_map>
@@ -66,22 +66,22 @@ void TimeLogger::Impl::SetEnd() {
       iter->second->elementsInBuffer = iter->second->elementsInBuffer + 1;
     }
   } else {
-    WARN_PRINT(***REMOVED***Could not find thread with id ***REMOVED*** << std::this_thread::get_id() <<
-               ***REMOVED***. Have you forgotten to call SetStart() before?***REMOVED***);
+    WARN_PRINT("Could not find thread with id " << std::this_thread::get_id() <<
+               ". Have you forgotten to call SetStart() before?");
   }
 }
 
 void TimeLogger::Impl::PrintSummary() {
   if (!isEnabled_) {
-    WARN_PRINT(***REMOVED***TimeLogger is not enabled! Cannot print a summary.***REMOVED***);
+    WARN_PRINT("TimeLogger is not enabled! Cannot print a summary.");
     return;
   }
 
-  INFO_PRINT(***REMOVED***Time usage per Thread summary:\n***REMOVED*** <<
-             ***REMOVED***------------------------------\n***REMOVED***);
+  INFO_PRINT("Time usage per Thread summary:\n" <<
+             "------------------------------\n");
   for (auto iter = threadIdTimeLogEntryMap_.cbegin(); iter != threadIdTimeLogEntryMap_.cend(); iter++) {
     if (iter->second->elementsInBuffer == 0) {
-      WARN_PRINT(***REMOVED***No time measurements were taken for thread with id ***REMOVED*** << iter->first << ***REMOVED***. Cannot print a summary.***REMOVED***);
+      WARN_PRINT("No time measurements were taken for thread with id " << iter->first << ". Cannot print a summary.");
     }
 
     dblArrSizeType_t start;
@@ -110,10 +110,10 @@ void TimeLogger::Impl::PrintSummary() {
     }
     avg = sum / iter->second->elementsInBuffer;
 
-    INFO_PRINT(***REMOVED***min = ***REMOVED*** << std::setprecision(3) << min <<
-               ***REMOVED***, max = ***REMOVED*** << max << ***REMOVED***, avg = ***REMOVED*** << avg << ***REMOVED*** seconds \n***REMOVED*** <<
-               ***REMOVED***(last # values = ***REMOVED*** << iter->second->elementsInBuffer << ***REMOVED***, iMax = ***REMOVED*** << iMax << ***REMOVED***, iMin = ***REMOVED*** << iMin <<
-               ***REMOVED***------------------------------\n***REMOVED***);
+    INFO_PRINT("min = " << std::setprecision(3) << min <<
+               ", max = " << max << ", avg = " << avg << " seconds \n" <<
+               "(last # values = " << iter->second->elementsInBuffer << ", iMax = " << iMax << ", iMin = " << iMin <<
+               "------------------------------\n");
   }
 }
 

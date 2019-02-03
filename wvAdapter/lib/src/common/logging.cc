@@ -1,4 +1,4 @@
-#include ***REMOVED***logging.h***REMOVED***
+#include "logging.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -9,13 +9,13 @@ namespace logging {
   std::mutex lock_;
 
   static const std::unordered_map<const LogLevel, const std::string> logLevelToNameMapping = {
-      {LogLevel::NONE,    ***REMOVED***NONE ***REMOVED***},
-      {LogLevel::TRACE,   ***REMOVED***TRACE***REMOVED***},
-      {LogLevel::DEBUG,   ***REMOVED***DEBUG***REMOVED***},
-      {LogLevel::INFO,    ***REMOVED***INFO ***REMOVED***},
-      {LogLevel::WARNING, ***REMOVED***WARN ***REMOVED***},
-      {LogLevel::ERROR,   ***REMOVED***ERROR***REMOVED***},
-      {LogLevel::FATAL,   ***REMOVED***FATAL***REMOVED***}
+      {LogLevel::NONE,    "NONE "},
+      {LogLevel::TRACE,   "TRACE"},
+      {LogLevel::DEBUG,   "DEBUG"},
+      {LogLevel::INFO,    "INFO "},
+      {LogLevel::WARNING, "WARN "},
+      {LogLevel::ERROR,   "ERROR"},
+      {LogLevel::FATAL,   "FATAL"}
   };
   static std::unordered_map<std::thread::id, std::string> threadIdToNameMapping;
   static LogLevel configuredLogLevel = LogLevel::INFO;
@@ -35,7 +35,7 @@ namespace logging {
       char timestamp[100];
       auto now = std::chrono::system_clock::now();
       std::time_t now_tm_t = std::chrono::system_clock::to_time_t(now);
-      std::strftime(timestamp, sizeof(timestamp), ***REMOVED***%Y-%m-%d %H:%M:%S***REMOVED***, std::localtime(&now_tm_t));
+      std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", std::localtime(&now_tm_t));
       long millis = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count() % 1000;
 
       auto iter = threadIdToNameMapping.find(tid);
@@ -48,9 +48,9 @@ namespace logging {
         tName = sstream.str();
       }
 
-      std::cout << ***REMOVED***[***REMOVED*** << logLevelToNameMapping.at(level) << ***REMOVED***]***REMOVED***
-                << timestamp << ***REMOVED***.***REMOVED*** << std::setfill('0') << std::setw(3) << millis
-                << ***REMOVED***(***REMOVED*** << tName << ***REMOVED*** - ***REMOVED*** << file << ***REMOVED***#***REMOVED*** << func << ***REMOVED***#***REMOVED*** << line << ***REMOVED***) ***REMOVED***;
+      std::cout << "[" << logLevelToNameMapping.at(level) << "]"
+                << timestamp << "." << std::setfill('0') << std::setw(3) << millis
+                << "(" << tName << " - " << file << "#" << func << "#" << line << ") ";
       return std::cout;
     } else {
       return nullStream_;
