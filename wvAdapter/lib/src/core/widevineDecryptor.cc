@@ -337,16 +337,16 @@ void FillCdmInBuffer(std::unique_ptr<DEMUXED_SAMPLE> &sample, cdm::InputBuffer *
       sample->sampleInfoTable->GetSubsampleInfo(
           samplePos, j, bytes_of_cleartext_data, bytes_of_encrypted_data);
 
-      inBuffer->subsamples[j].clear_bytes = bytes_of_cleartext_data;
-      inBuffer->subsamples[j].cipher_bytes = bytes_of_encrypted_data;
+      (*subsampleBuffer)[j].clear_bytes = bytes_of_cleartext_data;
+      (*subsampleBuffer)[j].cipher_bytes = bytes_of_encrypted_data;
 
       DEBUG_PRINT("\t\tsubsample "
                  << j << ": clear_bytes: " << bytes_of_cleartext_data
                  << ", cipher_bytes: " << bytes_of_encrypted_data);
     }
   } else {
-    inBuffer->subsamples[0].clear_bytes = headerSize;
-    inBuffer->subsamples[0].cipher_bytes = sample->sampleSizes[samplePos];
+    (*subsampleBuffer)[0].clear_bytes = headerSize;
+    (*subsampleBuffer)[0].cipher_bytes = sample->sampleSizes[samplePos];
   }
 
   inBuffer->timestamp = *globalTimestamp;

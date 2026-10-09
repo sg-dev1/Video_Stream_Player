@@ -6,8 +6,12 @@ import uuid
 from platform import node
 from getpass import getpass
 
-# pyCrypto
-from Crypto.Cipher import AES
+try:
+    # PyCryptodome installed via pip retains PyCrypto's import namespace.
+    from Crypto.Cipher import AES
+except ImportError:
+    # Debian/Ubuntu's python3-pycryptodome package uses this namespace.
+    from Cryptodome.Cipher import AES
 import requests
 
 import mpd
@@ -200,12 +204,14 @@ class SettingsManager(object):
 
 def encode(data):
     key = getMac()
-    cipher = AES.new(key, AES.MODE_CBC, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
-    mod_len = len(data) % 16
+    iv = b"\0" * 16
+    data = data.encode("utf-8")
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    mod_len = len(data) % AES.block_size
     pad_len = 0
     if mod_len:
-        pad_len = 16 - mod_len
-    data = "".join([data, " " * pad_len]) # assumes that no password has spaces in the end
+        pad_len = AES.block_size - mod_len
+    data += b" " * pad_len  # assumes passwords do not end in spaces
     encData = cipher.encrypt(data)
     return base64.b64encode(encData).decode("utf-8")
 
@@ -214,9 +220,10 @@ def decode(data):
     if not data:
         return ""
     key = getMac()
-    cipher = AES.new(key, AES.MODE_CBC, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
+    iv = b"\0" * 16
+    cipher = AES.new(key, AES.MODE_CBC, iv)
     data = base64.b64decode(data)
-    return cipher.decrypt(data).decode("utf-8").strip()
+    return cipher.decrypt(data).rstrip(b" ").decode("utf-8")
 
 
 # must be deterministic
@@ -285,7 +292,7 @@ def buildWidevineInitDataString(mpdObject, streamType=STREAM_TYPE_VIDEO, adaptio
 
 class ApplicationException(Exception):
     def __init__(self, message):
-        super().__init__()
+        super().__init__(message)
         self.message = message
 
 

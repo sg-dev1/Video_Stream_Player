@@ -1,5 +1,4 @@
 import binascii
-import time
 import base64
 import json
 import logging
@@ -7,6 +6,7 @@ import logging
 import widevineAdapter
 import amazon
 import util
+import constants
 
 LOG = logging.getLogger(__name__)
 
@@ -32,18 +32,15 @@ class ContentProvider(object):
         self.provider.close()
         widevineAdapter.Close()
 
-    def requestLicenseForEstablishedSession(self, resId, cencInitData):
+    def requestLicenseForEstablishedSession(self, resId, cencInitData,
+                                            streamType=constants.STREAM_TYPE_VIDEO):
         """
         Same as requestLicense, but does not call widevineAdapter.Init()
         """
-        widevineAdapter.CreateSessionAndGenerateRequest(cencInitData)
-
-        # wait for cdm to process request
-        time.sleep(3)
-
-        challenge = widevineAdapter.GetSessionMessage()
+        widevineAdapter.CreateSessionAndGenerateRequest(cencInitData, streamType)
+        challenge = widevineAdapter.GetSessionMessage(streamType)
         if not challenge:
-            LOG.error("Error retrieving challenge for contentType %s" % contentType)
+            LOG.error("Error retrieving challenge for stream type %s" % streamType)
             raise util.ApplicationException()
         b64EncodedChallenge = base64.b64encode(challenge).decode("utf-8")
         serverResponse = self.provider.getWidevine2License(resId, b64EncodedChallenge)
@@ -59,10 +56,7 @@ class ContentProvider(object):
         assert ("keyMetadata" in serverResponse["widevine2License"]["metadata"])
 
         license_ = base64.b64decode(serverResponse["widevine2License"]["license"])
-        widevineAdapter.UpdateCurrentSession(license_)
-
-        time.sleep(3)
-        # assert(False)
+        widevineAdapter.UpdateCurrentSession(license_, streamType)
 
 
     def requestLicense(self, resId, mpdUrl, streamType, adaptionSet=0, mpdObject=None):
@@ -85,9 +79,6 @@ class ContentProvider(object):
         # widevineAdapter stuff
         widevineAdapter.Init()
         widevineAdapter.CreateSessionAndGenerateRequest(cencInitData, streamType)
-
-        # wait for cdm to process request
-        time.sleep(3)
 
         challenge = widevineAdapter.GetSessionMessage(streamType)
         if not challenge:

@@ -398,9 +398,9 @@ int DecryptVideoThread::Impl::ProcessFrame(size_t pos, std::unique_ptr<DEMUXED_S
 
   if (extraDataSize > 0) {
     // update clear bytes since there is extra data
-    inBuffer.subsamples[0].clear_bytes += extraDataSize;
+    subsampleBuffer_[0].clear_bytes += extraDataSize;
     DEBUG_PRINT("Updated clear bytes of first subsample to "
-               << inBuffer.subsamples[0].clear_bytes);
+           << subsampleBuffer_[0].clear_bytes);
   }
 
   WidevineVideoFrame frame;

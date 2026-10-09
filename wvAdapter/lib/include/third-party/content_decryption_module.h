@@ -87,16 +87,58 @@ class DecryptedBlock;
 class VideoFrame;
 
 class Host_7;
-class Host_8;
+class Host_11;
 
 enum Status {
   kSuccess = 0,
   kNeedMoreData,  // Decoder needs more data to produce a decoded frame/sample.
   kNoKey,         // The required decryption key is not available.
-  kSessionError,  // Session management error.
+  kInitializationError,
   kDecryptError,  // Decryption failed.
   kDecodeError,   // Error decoding audio or video.
-  kDeferredInitialization  // Decoder is not ready for initialization.
+  kDeferredInitialization,  // Decoder is not ready for initialization.
+  kSessionError = kInitializationError
+};
+
+enum Exception : uint32_t {
+  kExceptionTypeError = 0,
+  kExceptionNotSupportedError,
+  kExceptionInvalidStateError,
+  kExceptionQuotaExceededError
+};
+
+enum class EncryptionScheme : uint32_t {
+  kUnencrypted = 0,
+  kCenc,
+  kCbcs
+};
+
+enum HdcpVersion : uint32_t {
+  kHdcpVersionNone,
+  kHdcpVersion1_0,
+  kHdcpVersion1_1,
+  kHdcpVersion1_2,
+  kHdcpVersion1_3,
+  kHdcpVersion1_4,
+  kHdcpVersion2_0,
+  kHdcpVersion2_1,
+  kHdcpVersion2_2,
+  kHdcpVersion2_3
+};
+
+struct Policy {
+  HdcpVersion min_hdcp_version;
+};
+
+enum MetricName : uint32_t {
+  kSdkVersion,
+  kCertificateSerialNumber,
+  kDecoderBypassBlockCount
+};
+
+struct Pattern {
+  uint32_t crypt_byte_block;
+  uint32_t skip_byte_block;
 };
 
 // This must at least contain the exceptions defined in the spec:
@@ -156,32 +198,44 @@ struct SubsampleEntry {
 // Represents an input buffer to be decrypted (and possibly decoded). It does
 // not own any pointers in this struct. If |iv_size| = 0, the data is
 // unencrypted.
-struct InputBuffer {
-  InputBuffer()
+struct InputBuffer_2 {
+  InputBuffer_2()
       : data(NULL),
         data_size(0),
+        encryption_scheme(EncryptionScheme::kCenc),
         key_id(NULL),
         key_id_size(0),
         iv(NULL),
         iv_size(0),
         subsamples(NULL),
         num_subsamples(0),
+        pattern{0, 0},
         timestamp(0) {}
 
   const uint8_t* data;  // Pointer to the beginning of the input data.
   uint32_t data_size;   // Size (in bytes) of |data|.
 
+  EncryptionScheme encryption_scheme;
+
   const uint8_t* key_id;  // Key ID to identify the decryption key.
   uint32_t key_id_size;   // Size (in bytes) of |key_id|.
+  uint32_t : 32;
 
   const uint8_t* iv;  // Initialization vector.
   uint32_t iv_size;   // Size (in bytes) of |iv|.
+  uint32_t : 32;
 
-  struct SubsampleEntry* subsamples;
+  const struct SubsampleEntry* subsamples;
   uint32_t num_subsamples;  // Number of subsamples in |subsamples|.
+  uint32_t : 32;
+
+  Pattern pattern;
 
   int64_t timestamp;  // Presentation timestamp in microseconds.
 };
+typedef InputBuffer_2 InputBuffer;
+static_assert(sizeof(InputBuffer_2) == (sizeof(void*) == 8 ? 80 : 64),
+              "InputBuffer_2 ABI layout mismatch");
 
 struct AudioDecoderConfig {
   enum AudioCodec { kUnknownAudioCodec = 0, kCodecVorbis, kCodecAac };
@@ -192,7 +246,8 @@ struct AudioDecoderConfig {
         bits_per_channel(0),
         samples_per_second(0),
         extra_data(NULL),
-        extra_data_size(0) {}
+        extra_data_size(0),
+        encryption_scheme(EncryptionScheme::kCenc) {}
 
   AudioCodec codec;
   int32_t channel_count;
@@ -203,7 +258,11 @@ struct AudioDecoderConfig {
   // vorbis setup header.
   uint8_t* extra_data;
   uint32_t extra_data_size;
+  EncryptionScheme encryption_scheme;
 };
+typedef AudioDecoderConfig AudioDecoderConfig_2;
+static_assert(sizeof(AudioDecoderConfig_2) == (sizeof(void*) == 8 ? 32 : 28),
+              "AudioDecoderConfig_2 ABI layout mismatch");
 
 // Supported sample formats for AudioFrames.
 enum AudioFormat {
@@ -232,7 +291,9 @@ struct Size {
 };
 
 struct VideoDecoderConfig {
-  enum VideoCodec { kUnknownVideoCodec = 0, kCodecVp8, kCodecH264, kCodecVp9 };
+  enum VideoCodec {
+    kUnknownVideoCodec = 0, kCodecVp8, kCodecH264, kCodecVp9, kCodecAv1
+  };
 
   enum VideoCodecProfile {
     kUnknownVideoCodecProfile = 0,
@@ -243,7 +304,9 @@ struct VideoDecoderConfig {
     kH264ProfileHigh,
     kH264ProfileHigh10,
     kH264ProfileHigh422,
-    kH264ProfileHigh444Predictive
+    kH264ProfileHigh444Predictive,
+    kVP9Profile0, kVP9Profile1, kVP9Profile2, kVP9Profile3,
+    kAv1ProfileMain, kAv1ProfileHigh, kAv1ProfilePro
   };
 
   VideoDecoderConfig()
@@ -251,11 +314,13 @@ struct VideoDecoderConfig {
         profile(kUnknownVideoCodecProfile),
         format(kUnknownVideoFormat),
         extra_data(NULL),
-        extra_data_size(0) {}
+        extra_data_size(0),
+        encryption_scheme(EncryptionScheme::kCenc) {}
 
   VideoCodec codec;
   VideoCodecProfile profile;
   VideoFormat format;
+  uint32_t : 32;
 
   // Width and height of video frame immediately post-decode. Not all pixels
   // in this region are valid.
@@ -265,7 +330,11 @@ struct VideoDecoderConfig {
   // AAVC data.
   uint8_t* extra_data;
   uint32_t extra_data_size;
+  EncryptionScheme encryption_scheme;
 };
+typedef VideoDecoderConfig VideoDecoderConfig_2;
+static_assert(sizeof(VideoDecoderConfig_2) == (sizeof(void*) == 8 ? 40 : 36),
+              "VideoDecoderConfig_2 ABI layout mismatch");
 
 enum StreamType { kStreamTypeAudio = 0, kStreamTypeVideo = 1 };
 
@@ -346,7 +415,8 @@ enum InitDataType { kCenc = 0, kKeyIds = 1, kWebM = 2 };
 enum SessionType {
   kTemporary = 0,
   kPersistentLicense = 1,
-  kPersistentKeyRelease = 2
+  kPersistentUsageRecord = 2,
+  kPersistentKeyRelease = kPersistentUsageRecord
 };
 
 // The type of the message event.  The valid types are defined in the spec:
@@ -354,7 +424,8 @@ enum SessionType {
 enum MessageType {
   kLicenseRequest = 0,
   kLicenseRenewal = 1,
-  kLicenseRelease = 2
+  kLicenseRelease = 2,
+  kIndividualizationRequest = 3
 };
 
 // FileIO interface provides a way for the CDM to store data in a file in
@@ -616,10 +687,11 @@ class ContentDecryptionModule_7 {
 // provided in CreateCdmInstance() to allocate any Buffer that needs to
 // be passed back to the caller. Implementations must call Buffer::Destroy()
 // when a Buffer is created that will never be returned to the caller.
-class ContentDecryptionModule_8 {
+class ContentDecryptionModule_11 {
  public:
-  static const int kVersion = 8;
-  typedef Host_8 Host;
+  static const int kVersion = 11;
+  static const bool kIsStable = true;
+  typedef Host_11 Host;
 
   // Initializes the CDM instance, providing information about permitted
   // functionalities.
@@ -629,7 +701,11 @@ class ContentDecryptionModule_8 {
   // If |allow_persistent_state| is false, the CDM must not attempt to
   // persist state. Calls to CreateFileIO() will fail.
   virtual void Initialize(bool allow_distinctive_identifier,
-                          bool allow_persistent_state) = 0;
+                          bool allow_persistent_state,
+                          bool use_hw_secure_codecs) = 0;
+
+  virtual void GetStatusForPolicy(uint32_t promise_id,
+                                  const Policy& policy) = 0;
 
   // SetServerCertificate(), CreateSessionAndGenerateRequest(), LoadSession(),
   // UpdateSession(), CloseSession(), and RemoveSession() all accept a
@@ -694,7 +770,7 @@ class ContentDecryptionModule_8 {
   // Returns kDecryptError if any other error happened.
   // If the return value is not kSuccess, |decrypted_buffer| should be ignored
   // by the caller.
-  virtual Status Decrypt(const InputBuffer& encrypted_buffer,
+  virtual Status Decrypt(const InputBuffer_2& encrypted_buffer,
                          DecryptedBlock* decrypted_buffer) = 0;
 
   // Initializes the CDM audio decoder with |audio_decoder_config|. This
@@ -708,7 +784,7 @@ class ContentDecryptionModule_8 {
   // decoder at this time. Must call Host::OnDeferredInitializationDone() once
   // initialization is complete.
   virtual Status InitializeAudioDecoder(
-      const AudioDecoderConfig& audio_decoder_config) = 0;
+      const AudioDecoderConfig_2& audio_decoder_config) = 0;
 
   // Initializes the CDM video decoder with |video_decoder_config|. This
   // function must be called before DecryptAndDecodeFrame() is called.
@@ -721,7 +797,7 @@ class ContentDecryptionModule_8 {
   // decoder at this time. Must call Host::OnDeferredInitializationDone() once
   // initialization is complete.
   virtual Status InitializeVideoDecoder(
-      const VideoDecoderConfig& video_decoder_config) = 0;
+      const VideoDecoderConfig_2& video_decoder_config) = 0;
 
   // De-initializes the CDM decoder and sets it to an uninitialized state. The
   // caller can initialize the decoder again after this call to re-initialize
@@ -749,7 +825,7 @@ class ContentDecryptionModule_8 {
   // Returns kDecodeError if any decoding error happened.
   // If the return value is not kSuccess, |video_frame| should be ignored by
   // the caller.
-  virtual Status DecryptAndDecodeFrame(const InputBuffer& encrypted_buffer,
+  virtual Status DecryptAndDecodeFrame(const InputBuffer_2& encrypted_buffer,
                                        VideoFrame* video_frame) = 0;
 
   // Decrypts the |encrypted_buffer| and decodes the decrypted buffer into
@@ -768,7 +844,7 @@ class ContentDecryptionModule_8 {
   // Returns kDecodeError if any decoding error happened.
   // If the return value is not kSuccess, |audio_frames| should be ignored by
   // the caller.
-  virtual Status DecryptAndDecodeSamples(const InputBuffer& encrypted_buffer,
+  virtual Status DecryptAndDecodeSamples(const InputBuffer_2& encrypted_buffer,
                                          AudioFrames* audio_frames) = 0;
 
   // Called by the host after a platform challenge was initiated via
@@ -785,15 +861,18 @@ class ContentDecryptionModule_8 {
       QueryResult result, uint32_t link_mask,
       uint32_t output_protection_mask) = 0;
 
+  virtual void OnStorageId(uint32_t version, const uint8_t* storage_id,
+                           uint32_t storage_id_size) = 0;
+
   // Destroys the object in the same context as it was created.
   virtual void Destroy() = 0;
 
  protected:
-  ContentDecryptionModule_8() {}
-  virtual ~ContentDecryptionModule_8() {}
+  ContentDecryptionModule_11() {}
+  virtual ~ContentDecryptionModule_11() {}
 };
 
-typedef ContentDecryptionModule_8 ContentDecryptionModule;
+typedef ContentDecryptionModule_11 ContentDecryptionModule;
 
 // Represents a buffer created by Allocator implementations.
 class Buffer {
@@ -895,15 +974,6 @@ class Host_7 {
   virtual void OnSessionClosed(const char* session_id,
                                uint32_t session_id_size) = 0;
 
-  // Called by the CDM when an error occurs in session |session_id|
-  // unrelated to one of the ContentDecryptionModule calls that accept a
-  // |promise_id|. |error| must be specified, |error_message| and
-  // |system_code| are optional. Length parameters should not include null
-  // termination.
-  // Note:
-  // - This method is only for supporting prefixed EME API.
-  // - This method will be ignored by unprefixed EME. All errors reported
-  //   in this method should probably also be reported by one of other methods.
   virtual void OnLegacySessionError(const char* session_id,
                                     uint32_t session_id_length, Error error,
                                     uint32_t system_code,
@@ -949,9 +1019,9 @@ class Host_7 {
   virtual ~Host_7() {}
 };
 
-class Host_8 {
+class Host_11 {
  public:
-  static const int kVersion = 8;
+  static const int kVersion = 11;
 
   // Returns a Buffer* containing non-zero members upon success, or NULL on
   // failure. The caller owns the Buffer* after this call. The buffer is not
@@ -965,6 +1035,11 @@ class Host_8 {
 
   // Returns the current wall time in seconds.
   virtual Time GetCurrentWallTime() = 0;
+
+  virtual void OnInitialized(bool success) = 0;
+
+  virtual void OnResolveKeyStatusPromise(uint32_t promise_id,
+                                         KeyStatus key_status) = 0;
 
   // Called by the CDM when a session is created or loaded and the value for the
   // MediaKeySession's sessionId attribute is available (|session_id|).
@@ -985,7 +1060,7 @@ class Host_8 {
   // ContentDecryptionModule calls that accept a |promise_id|.
   // |error| must be specified, |error_message| and |system_code|
   // are optional. |error_message_size| should not include null termination.
-  virtual void OnRejectPromise(uint32_t promise_id, Error error,
+  virtual void OnRejectPromise(uint32_t promise_id, Exception exception,
                                uint32_t system_code, const char* error_message,
                                uint32_t error_message_size) = 0;
 
@@ -997,9 +1072,7 @@ class Host_8 {
   virtual void OnSessionMessage(const char* session_id,
                                 uint32_t session_id_size,
                                 MessageType message_type, const char* message,
-                                uint32_t message_size,
-                                const char* legacy_destination_url,
-                                uint32_t legacy_destination_url_length) = 0;
+                                uint32_t message_size) = 0;
 
   // Called by the CDM when there has been a change in keys or their status for
   // session |session_id|. |has_additional_usable_key| should be set if a
@@ -1028,21 +1101,6 @@ class Host_8 {
   // parameter should not include null termination.
   virtual void OnSessionClosed(const char* session_id,
                                uint32_t session_id_size) = 0;
-
-  // Called by the CDM when an error occurs in session |session_id|
-  // unrelated to one of the ContentDecryptionModule calls that accept a
-  // |promise_id|. |error| must be specified, |error_message| and
-  // |system_code| are optional. Length parameters should not include null
-  // termination.
-  // Note:
-  // - This method is only for supporting prefixed EME API.
-  // - This method will be ignored by unprefixed EME. All errors reported
-  //   in this method should probably also be reported by one of other methods.
-  virtual void OnLegacySessionError(const char* session_id,
-                                    uint32_t session_id_length, Error error,
-                                    uint32_t system_code,
-                                    const char* error_message,
-                                    uint32_t error_message_length) = 0;
 
   // The following are optional methods that may not be implemented on all
   // platforms.
@@ -1078,9 +1136,13 @@ class Host_8 {
   // CDM can call this method multiple times to operate on different files.
   virtual FileIO* CreateFileIO(FileIOClient* client) = 0;
 
+  virtual void RequestStorageId(uint32_t version) = 0;
+
+  virtual void ReportMetrics(MetricName metric_name, uint64_t value) = 0;
+
  protected:
-  Host_8() {}
-  virtual ~Host_8() {}
+  Host_11() {}
+  virtual ~Host_11() {}
 };
 
 // Represents a decrypted block that has not been decoded.

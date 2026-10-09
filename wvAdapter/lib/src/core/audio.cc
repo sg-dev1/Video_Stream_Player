@@ -148,8 +148,7 @@ void DecodeAudioThread::Impl::Start(const std::string &name) {
   stream_ = wvAdapterLib::GetMp4AudioStream();
   audioRenderer_ = wvAdapterLib::GetAudioRenderer();
 
-  // init libav stuff
-  av_register_all();
+  // FFmpeg registers codecs automatically in current releases.
   // NOTE AAC is hard coded for now
   codec_ = avcodec_find_decoder(AV_CODEC_ID_AAC);
   if (!codec_) {
@@ -187,8 +186,7 @@ void DecodeAudioThread::Impl::Run() {
   while (isRunning_) {
     auto sample = input_->pop();
     // DEBUG_PRINT("Processing next DEMUXED_SAMPLE...");
-    AVPacket avPacket;
-    av_init_packet(&avPacket);
+    AVPacket avPacket = {};
     avPacket.size = sample.size;
     avPacket.data = sample.buffer;
 

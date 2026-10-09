@@ -16,7 +16,7 @@ public:
   bool CreateSessionAndGenerateRequest(const uint8_t *initData,
                                        uint32_t initDataSize, STREAM_TYPE type);
   void SetServerCertificate(const uint8_t *certData, uint32_t certDataSize);
-  void UpdateCurrentSession(const uint8_t *data, uint32_t dataSize,
+  bool UpdateCurrentSession(const uint8_t *data, uint32_t dataSize,
                             STREAM_TYPE type);
 
   std::string GetSessionMessage(STREAM_TYPE type);
@@ -139,16 +139,14 @@ bool AdapterInterface::Impl::CreateSessionAndGenerateRequest(
         "(AUDIO) CreateSessionAndGenerateRequest called with data :", initData,
         initDataSize);
 
-    audioAdapter_->CreateSessionAndGenerateRequest(initData, initDataSize);
+    return audioAdapter_->CreateSessionAndGenerateRequest(initData, initDataSize);
   } else {
     PRINT_BYTE_ARRAY(
         "(VIDEO) CreateSessionAndGenerateRequest called with data :", initData,
         initDataSize);
 
-    videoAdapter_->CreateSessionAndGenerateRequest(initData, initDataSize);
+    return videoAdapter_->CreateSessionAndGenerateRequest(initData, initDataSize);
   }
-
-  return true;
 }
 
 void AdapterInterface::Impl::SetServerCertificate(const uint8_t *certData,
@@ -160,32 +158,27 @@ void AdapterInterface::Impl::SetServerCertificate(const uint8_t *certData,
   videoAdapter_->SetServerCertificate(certData, certDataSize);
 }
 
-void AdapterInterface::Impl::UpdateCurrentSession(
+bool AdapterInterface::Impl::UpdateCurrentSession(
     const uint8_t *data, uint32_t dataSize,
     AdapterInterface::STREAM_TYPE type) {
   if (!isInitialized_) {
     // check if initialized
-    return;
+    return false;
   }
 
   if (type == AdapterInterface::STREAM_TYPE::kAudio) {
-    audioAdapter_->UpdateSession(data, dataSize);
+    return audioAdapter_->UpdateSession(data, dataSize);
   } else {
-    videoAdapter_->UpdateSession(data, dataSize);
+    return videoAdapter_->UpdateSession(data, dataSize);
   }
 }
 
 std::string AdapterInterface::Impl::GetSessionMessage(STREAM_TYPE type) {
+  std::string message;
   if (type == STREAM_TYPE::kAudio) {
-    if (!audioAdapter_->IsMessageValid()) {
-      return "";
-    }
-    return audioAdapter_->GetMessage();
+    return audioAdapter_->WaitForMessage(message) ? message : std::string();
   } else {
-    if (!videoAdapter_->IsMessageValid()) {
-      return "";
-    }
-    return videoAdapter_->GetMessage();
+    return videoAdapter_->WaitForMessage(message) ? message : std::string();
   }
 }
 
@@ -421,9 +414,9 @@ bool AdapterInterface::CreateSessionAndGenerateRequest(
 void AdapterInterface::SetServerCertificate(const uint8_t *certData, uint32_t certDataSize) {
   pImpl_->SetServerCertificate(certData, certDataSize);
 }
-void AdapterInterface::UpdateCurrentSession(const uint8_t *data, uint32_t dataSize,
-                                            AdapterInterface::STREAM_TYPE type) {
-  pImpl_->UpdateCurrentSession(data, dataSize, type);
+bool AdapterInterface::UpdateCurrentSession(const uint8_t *data, uint32_t dataSize,
+                                            STREAM_TYPE type) {
+  return pImpl_->UpdateCurrentSession(data, dataSize, type);
 }
 
 std::string AdapterInterface::GetSessionMessage(AdapterInterface::STREAM_TYPE type) {

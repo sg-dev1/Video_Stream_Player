@@ -128,7 +128,8 @@ static PyObject *CreateSessionAndGenerateRequest(PyObject *self,
   const char *initData;
   Py_ssize_t initDataSize;
   int type;
-  if (!PyArg_ParseTuple(args, "s#i", &initData, &initDataSize, &type)) {
+  type = AdapterInterface::STREAM_TYPE::kVideo;
+  if (!PyArg_ParseTuple(args, "s#|i", &initData, &initDataSize, &type)) {
     return nullptr;
   }
 
@@ -139,9 +140,15 @@ static PyObject *CreateSessionAndGenerateRequest(PyObject *self,
     return nullptr;
   }
 
-  if (!interface_.CreateSessionAndGenerateRequest(
-          reinterpret_cast<const uint8_t *>(initData), initDataSize,
-          static_cast<AdapterInterface::STREAM_TYPE>(type))) {
+  bool created;
+  Py_BEGIN_ALLOW_THREADS
+  created = interface_.CreateSessionAndGenerateRequest(
+      reinterpret_cast<const uint8_t *>(initData), initDataSize,
+      static_cast<AdapterInterface::STREAM_TYPE>(type));
+  Py_END_ALLOW_THREADS
+  if (!created) {
+    PyErr_SetString(PyExc_RuntimeError,
+            "Could not start Widevine session creation");
     return nullptr;
   }
 
@@ -168,13 +175,16 @@ static PyObject *SetServerCertificate(PyObject *self, PyObject *args) {
 
 static PyObject *GetSessionMessage(PyObject *self, PyObject *args) {
   DEBUG_PRINT("GetSessionMessage called");
-  int type;
-  if (!PyArg_ParseTuple(args, "i", &type)) {
+  int type = AdapterInterface::STREAM_TYPE::kVideo;
+  if (!PyArg_ParseTuple(args, "|i", &type)) {
     return nullptr;
   }
 
-  std::string msg = interface_.GetSessionMessage(
+  std::string msg;
+  Py_BEGIN_ALLOW_THREADS
+  msg = interface_.GetSessionMessage(
       static_cast<AdapterInterface::STREAM_TYPE>(type));
+  Py_END_ALLOW_THREADS
   return Py_BuildValue("y#", msg.c_str(), (Py_ssize_t)msg.size());
 }
 
@@ -182,15 +192,23 @@ static PyObject *UpdateCurrentSession(PyObject *self, PyObject *args) {
   DEBUG_PRINT("UpdateCurrentSession called");
   const char *serverResponseData;
   Py_ssize_t serverResponseDataSize;
-  int type;
-  if (!PyArg_ParseTuple(args, "s#i", &serverResponseData,
+  int type = AdapterInterface::STREAM_TYPE::kVideo;
+  if (!PyArg_ParseTuple(args, "s#|i", &serverResponseData,
                         &serverResponseDataSize, &type)) {
     return nullptr;
   }
 
-  interface_.UpdateCurrentSession(
+  bool updated;
+  Py_BEGIN_ALLOW_THREADS
+  updated = interface_.UpdateCurrentSession(
       reinterpret_cast<const uint8_t *>(serverResponseData),
       serverResponseDataSize, static_cast<AdapterInterface::STREAM_TYPE>(type));
+  Py_END_ALLOW_THREADS
+  if (!updated) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "Widevine rejected the license response or timed out");
+    return nullptr;
+  }
 
   Py_INCREF(Py_None);
   return Py_None;

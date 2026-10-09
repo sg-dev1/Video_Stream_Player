@@ -8,8 +8,9 @@ import random
 import re
 import os
 import subprocess
+import sys
 from http.cookiejar import LWPCookieJar
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 from bs4 import BeautifulSoup
 
 import constants
@@ -27,6 +28,33 @@ WIDEVINE2LICENSE_RES = "Widevine2License"
 deviceTypeID = 'AOAGZA014O5RE'
 
 LOG = logging.getLogger(__name__)
+
+
+def _response_json(response, operation):
+    """Decode an API response or raise a useful error without leaking tokens."""
+    try:
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        endpoint = urlsplit(response.url)
+        raise ApplicationException(
+            "%s failed: HTTP %s from %s%s" % (
+                operation, response.status_code, endpoint.netloc, endpoint.path
+            )
+        ) from None
+
+    try:
+        return response.json()
+    except ValueError as exc:
+        endpoint = urlsplit(response.url)
+        title = BeautifulSoup(response.text[:8192], "html.parser").title
+        pageTitle = title.get_text(" ", strip=True) if title else "unknown HTML page"
+        raise ApplicationException(
+            "%s expected JSON, but %s%s returned HTML (HTTP %s; page title: %s). "
+            "Amazon's legacy playback endpoint may no longer be supported." % (
+                operation, endpoint.netloc, endpoint.path, response.status_code,
+                pageTitle[:160]
+            )
+        ) from None
 
 
 class AmazonMovieEntry(object):
@@ -58,22 +86,19 @@ class Amazon(object):
 
     def logIn(self):
         """
-        Login failed using mechanicalsoup and robobrowser.
-        (for other mechanize alternatives see:
-            https://stackoverflow.com/questions/2662705/are-there-any-alternatives-to-mechanize-in-python
-        )
-
-        So fall back to mechanize (however this only support Python 2.x)
+        Log in using Mechanize and load the saved session cookie.
         """
         cj = LWPCookieJar()
 
         if not os.path.isfile(constants.COOKIE_FILE):
             email, pw = settingsManagerSingleton.getCredentialsForService("amazon")
-            python2 = subprocess.check_output(["which", "python2"])
-            python2 = python2.decode("utf-8").replace("\n", "")
-            LOG.info("Using python interpreter %s" % python2)
-            ret = subprocess.call([python2, "amazon-login.py", email, pw])
-            if ret != 0:
+            login_script = os.path.join(os.path.dirname(__file__), "amazon-login.py")
+            result = subprocess.run(
+                [sys.executable, login_script],
+                input="{}\n{}\n".format(email, pw),
+                text=True,
+            )
+            if result.returncode != 0:
                 raise ApplicationException("Login failed.")
 
         cj.load(constants.COOKIE_FILE, ignore_discard=True, ignore_expires=True)
@@ -174,10 +199,7 @@ class Amazon(object):
 
         url = LICENSE_SERVER + "/cdp/catalog/GetPlaybackResources"
         r = self.session.post(url, params=params, data=postData)
-
-        # LOG.info("status: %s" % r.status_code)
-        # LOG.info("json: %s" % r.json())
-        return r.json()
+        return _response_json(r, "Amazon Widevine license request")
 
     def getFilmInfo(self, asin):
         """
@@ -209,10 +231,7 @@ class Amazon(object):
 
         url = LICENSE_SERVER + "/cdp/catalog/GetPlaybackResources"
         r = self.session.post(url, params=params)
-
-        # LOG.info("status: %s" % r.status_code)
-        # LOG.info("json: %s" % r.json())
-        data = r.json()
+        data = _response_json(r, "Amazon playback resource request")
 
         # NOTE enable if debug required
         #LOG.info("")
@@ -247,14 +266,15 @@ class Amazon(object):
         For a movie this map only contains a single entry.
         """
         r = self.session.get(pageUrl)
-        # LOG.info("status: %s" % r.status_code)
+        LOG.debug("Prime Video detail request returned HTTP %s from %s",
+              r.status_code, r.url)
+        r.raise_for_status()
 
         content = r.text
 
         soup = BeautifulSoup(content, "html.parser")
-        #print(soup.find_all("div"))
         listEntries = soup.find_all("div", class_="dv-episode-container")
-        print(listEntries)
+        LOG.debug("Found %d legacy episode entries", len(listEntries))
         titleAmazonMovieEntryMap = {}
         for entry in listEntries:
             LOG.debug(entry)
@@ -299,6 +319,33 @@ class Amazon(object):
                 titleAmazonMovieEntryMap[titles[i]] = azMovieEntry
 
         if titleAmazonMovieEntryMap == {}:
+            # Current Prime Video pages use a different component structure.
+            # Episode ASINs are embedded in the selector input's id.
+            for entry in soup.select('li[data-testid="episode-list-item"]'):
+                titleElement = entry.find("h3")
+                selector = entry.select_one('input[id^="selector-"]')
+                if not titleElement or not selector:
+                    continue
+
+                selectorId = selector.get("id", "")
+                asin = selectorId[len("selector-"):]
+                if not re.fullmatch(r"[A-Z0-9]{10}", asin):
+                    continue
+
+                title = titleElement.get_text(" ", strip=True)
+                synopsisElement = entry.select_one('[data-testid^="synopsis-"]')
+                synopsisText = (synopsisElement.get_text(" ", strip=True)
+                                if synopsisElement else "")
+                image = entry.select_one('[data-testid="base-image"]')
+                imgUrl = image.get("src", "") if image else ""
+                titleAmazonMovieEntryMap[title] = AmazonMovieEntry(
+                    asin=asin, title=title, imgUrl=imgUrl,
+                    synopsisText=synopsisText, synopsisDict={})
+
+            LOG.debug("Found %d current-format episode entries",
+                      len(titleAmazonMovieEntryMap))
+
+        if titleAmazonMovieEntryMap == {}:
             # if map is empty we have a movie which must be specially parsed
             synopsis = soup.find("div", class_="dv-simple-synopsis")
             if synopsis:
@@ -316,11 +363,7 @@ class Amazon(object):
                     synopsisDict[key] = val
 
                 watchListToggleForm = soup.find("form", class_="dv-watchlist-toggle")
-                # LOG.debug(watchListToggleForm)
-                # XXX this throws an exception
-                # hiddenAsinInput = watchListToggleForm.find("input", name="ASIN")
-                # asin = hiddenAsinInput["value"]
-                inputs = watchListToggleForm.find_all("input")
+                inputs = watchListToggleForm.find_all("input") if watchListToggleForm else []
                 asin = None
                 for input_ in inputs:
                     # TODO find a better solution - querying just for the name did not work
@@ -341,6 +384,17 @@ class Amazon(object):
                 azMovieEntry = AmazonMovieEntry(asin=asin, title=title, imgUrl=imgUrl,
                                                 synopsisText=synopsisText, synopsisDict=synopsisDict)
                 titleAmazonMovieEntryMap[title] = azMovieEntry
+
+        if titleAmazonMovieEntryMap == {}:
+            # A detail page may have neither an episode list nor the old movie
+            # synopsis markup. Retain its page title and ASIN as a final fallback.
+            titleH1 = soup.find("h1")
+            asin = urlparse(pageUrl).path.rstrip("/").rsplit("/", 1)[-1]
+            if titleH1 and re.fullmatch(r"[A-Z0-9]{10}", asin):
+                title = titleH1.get_text(" ", strip=True)
+                titleAmazonMovieEntryMap[title] = AmazonMovieEntry(
+                    asin=asin, title=title, imgUrl="", synopsisText="",
+                    synopsisDict={})
 
         return titleAmazonMovieEntryMap
 
@@ -368,7 +422,8 @@ class Amazon(object):
 
     def _getUrlParams(self):
         url = BASE_URL + '/gp/deal/ajax/getNotifierResources.html'
-        showpage = self.session.get(url).json()
+        response = self.session.get(url)
+        showpage = _response_json(response, "Amazon customer playback metadata request")
 
         if not showpage:
             raise ApplicationException("Error retrieving %s" % url)
@@ -395,12 +450,28 @@ class Amazon(object):
 
         rand = 'onWebToken_' + str(random.randint(0, 484))
         url = BASE_URL + "/gp/video/streaming/player-token.json?callback=" + rand
-        pltoken = self.session.get(url).text
-        # LOG.info("pltoken: %s" % pltoken)
+        response = self.session.get(url)
+        endpoint = urlsplit(response.url)
+        if response.status_code != 200:
+            raise ApplicationException(
+                "Amazon playback-token request failed: HTTP %s from %s%s" % (
+                    response.status_code, endpoint.netloc, endpoint.path
+                )
+            )
+        pltoken = response.text
         try:
             values['token'] = re.compile('"([^"]*).*"([^"]*)"').findall(pltoken)[0][1]
         except IndexError:
-            raise ApplicationException("Error retrieving token via url %s." % url)
+            title = BeautifulSoup(pltoken[:8192], "html.parser").title
+            pageTitle = title.get_text(" ", strip=True) if title else "unknown response"
+            raise ApplicationException(
+                "Amazon playback-token endpoint returned no token (HTTP %s; "
+                "content type %s; page title: %s). The legacy player-token API "
+                "may have been retired." % (
+                    response.status_code, response.headers.get("Content-Type", "unknown"),
+                    pageTitle[:160]
+                )
+            )
 
         return values
 
@@ -431,7 +502,6 @@ if __name__ == "__main__":
 
     def testLicenseRequest():
         import binascii
-        import time
         import base64
         import widevineAdapter
 
@@ -449,9 +519,6 @@ if __name__ == "__main__":
         # widevineAdapter stuff
         widevineAdapter.Init()
         widevineAdapter.CreateSessionAndGenerateRequest(cencInitData)
-
-        # wait for cdm to process request
-        time.sleep(3)
 
         challenge = widevineAdapter.GetSessionMessage()
         if not challenge:

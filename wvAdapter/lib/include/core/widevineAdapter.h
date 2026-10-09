@@ -3,12 +3,20 @@
 
 #include <string>
 #include <vector>
+#include <condition_variable>
+#include <map>
+#include <mutex>
+#include <thread>
+#include <chrono>
+#include <atomic>
 
 #include "constants.h"
 #include "content_decryption_module.h"
 
-class WidevineAdapter : public cdm::Host_8 {
+class WidevineAdapter : public cdm::Host_11 {
 public:
+  ~WidevineAdapter();
+
   // InitializeCdmModule_4
   bool Init();
   // DeinitializeCdmModule
@@ -19,10 +27,10 @@ public:
   //
   // cdm::ContentDecryptionModule wrappers
   //
-  void CreateSessionAndGenerateRequest(const uint8_t *initData,
+  bool CreateSessionAndGenerateRequest(const uint8_t *initData,
                                        uint32_t initDataSize);
   void SetServerCertificate(const uint8_t *certData, uint32_t certDataSize);
-  void UpdateSession(const uint8_t *data, uint32_t dataSize);
+  bool UpdateSession(const uint8_t *data, uint32_t dataSize);
 
   cdm::Status
   InitCdmVideoDecoder(cdm::VideoDecoderConfig::VideoCodec codec,
@@ -45,29 +53,27 @@ public:
   //
   // misc functions
   //
-  bool IsMessageValid() { return messageValid_; }
-  const std::string &GetMessage() { return message_; }
-  const cdm::MessageType GetMessageType() { return messageType_; }
-  const std::string &GetCdmSessionId() { return cdmSessionId_; }
-  int ValidKeyIdsSize() { return validKeyIds_.size(); }
+  bool WaitForMessage(std::string &message);
+  int ValidKeyIdsSize();
 
   //
-  // cdm::Host_8
+  // cdm::Host_11
   //
   cdm::Buffer *Allocate(uint32_t aCapacity) override;
   void SetTimer(int64_t aDelayMs, void *aContext) override;
   cdm::Time GetCurrentWallTime() override;
+  void OnInitialized(bool aSuccess) override;
+  void OnResolveKeyStatusPromise(uint32_t aPromiseId,
+                                 cdm::KeyStatus aKeyStatus) override;
   void OnResolveNewSessionPromise(uint32_t aPromiseId, const char *aSessionId,
                                   uint32_t aSessionIdSize) override;
   void OnResolvePromise(uint32_t aPromiseId) override;
-  void OnRejectPromise(uint32_t aPromiseId, cdm::Error aError,
+  void OnRejectPromise(uint32_t aPromiseId, cdm::Exception aException,
                        uint32_t aSystemCode, const char *aErrorMessage,
                        uint32_t aErrorMessageSize) override;
   void OnSessionMessage(const char *aSessionId, uint32_t aSessionIdSize,
                         cdm::MessageType aMessageType, const char *aMessage,
-                        uint32_t aMessageSize,
-                        const char *aLegacyDestinationUrl,
-                        uint32_t aLegacyDestinationUrlLength) override;
+                        uint32_t aMessageSize) override;
   void OnSessionKeysChange(const char *aSessionId, uint32_t aSessionIdSize,
                            bool aHasAdditionalUsableKey,
                            const cdm::KeyInformation *aKeysInfo,
@@ -76,10 +82,6 @@ public:
                           cdm::Time aNewExpiryTime) override;
   void OnSessionClosed(const char *aSessionId,
                        uint32_t aSessionIdSize) override;
-  void OnLegacySessionError(const char *aSessionId, uint32_t aSessionId_length,
-                            cdm::Error aError, uint32_t aSystemCode,
-                            const char *aErrorMessage,
-                            uint32_t aErrorMessageLength) override;
   void SendPlatformChallenge(const char *aServiceId, uint32_t aServiceIdSize,
                              const char *aChallenge,
                              uint32_t aChallengeSize) override;
@@ -88,20 +90,38 @@ public:
   void OnDeferredInitializationDone(cdm::StreamType aStreamType,
                                     cdm::Status aDecoderStatus) override;
   cdm::FileIO *CreateFileIO(cdm::FileIOClient *aClient) override;
+  void RequestStorageId(uint32_t aVersion) override;
+  void ReportMetrics(cdm::MetricName aMetricName, uint64_t aValue) override;
 
 private:
   // CreateCdmInstance
   cdm::ContentDecryptionModule *CreateCdmInstance();
+  uint32_t BeginPromise();
+  bool WaitForPromise(uint32_t aPromiseId);
+  void TimerLoop();
 
   std::string libpath_ = WIDEVINE_PATH;
   void *libwidevine_ = nullptr;
 
   cdm::ContentDecryptionModule *cdm_ = nullptr;
+  mutable std::mutex stateMutex_;
+  std::condition_variable stateChanged_;
+  std::map<uint32_t, int> promiseResults_;
+  std::string callbackError_;
+  bool initialized_ = false;
+  bool initializationSucceeded_ = false;
   bool messageValid_ = false;
   std::string message_;
-  cdm::MessageType messageType_;
+  cdm::MessageType messageType_ = cdm::MessageType::kLicenseRequest;
   std::string cdmSessionId_;
   std::vector<std::string> validKeyIds_;
+  std::atomic<uint32_t> nextPromiseId_{1};
+
+  std::mutex timerMutex_;
+  std::condition_variable timerChanged_;
+  std::multimap<std::chrono::steady_clock::time_point, void *> timers_;
+  std::thread timerThread_;
+  bool stopTimers_ = false;
 };
 
 #endif // WIDEVINE_ADAPTER_H_

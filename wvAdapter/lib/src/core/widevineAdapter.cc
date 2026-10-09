@@ -4,6 +4,14 @@
 
 // required by dlopen & co
 #include <dlfcn.h>
+#include <algorithm>
+#include <sstream>
+
+namespace {
+const std::chrono::seconds kCallbackTimeout(20);
+}
+
+WidevineAdapter::~WidevineAdapter() { Shutdown(); }
 
 #define STRINGIFY(s) _STRINGIFY(s)
 #define _STRINGIFY(s) #s
@@ -12,9 +20,19 @@
 // @WidevineAdapter
 //
 bool WidevineAdapter::Init() {
+  {
+    std::lock_guard<std::mutex> lock(timerMutex_);
+    stopTimers_ = false;
+    timers_.clear();
+  }
+  if (!timerThread_.joinable()) {
+    timerThread_ = std::thread(&WidevineAdapter::TimerLoop, this);
+  }
+
   libwidevine_ = dlopen(libpath_.c_str(), RTLD_NOW | RTLD_GLOBAL);
   if (libwidevine_ == nullptr) {
     ERROR_PRINT("dlopen " << libpath_ << " failed with " << dlerror());
+    Shutdown();
     return false;
   }
 
@@ -22,6 +40,7 @@ bool WidevineAdapter::Init() {
       dlsym(libwidevine_, STRINGIFY(INITIALIZE_CDM_MODULE)));
   if (!initCdmModule) {
     ERROR_PRINT("dlysm " << STRINGIFY(INITIALIZE_CDM_MODULE) << " failed");
+    Shutdown();
     return false;
   }
 
@@ -29,10 +48,32 @@ bool WidevineAdapter::Init() {
 
   cdm_ = CreateCdmInstance();
   if (cdm_ == nullptr) {
+    Shutdown();
     return false;
   }
-  // Initialize(aAllowDistinctiveIdentifier, aAllowPersistentState)
-  cdm_->Initialize(false, false); // NOTE chromium also uses false, false
+
+  {
+    std::lock_guard<std::mutex> lock(stateMutex_);
+    initialized_ = false;
+    initializationSucceeded_ = false;
+    messageValid_ = false;
+    message_.clear();
+    callbackError_.clear();
+    cdmSessionId_.clear();
+    validKeyIds_.clear();
+    promiseResults_.clear();
+  }
+  INFO_PRINT("Loaded Widevine CDM version " << GetCdmVersion());
+  cdm_->Initialize(false, false, false);
+  std::unique_lock<std::mutex> lock(stateMutex_);
+  if (!stateChanged_.wait_for(lock, kCallbackTimeout,
+                              [this] { return initialized_; }) ||
+      !initializationSucceeded_) {
+    ERROR_PRINT("Widevine CDM initialization did not complete successfully");
+    lock.unlock();
+    Shutdown();
+    return false;
+  }
 
   return true;
 }
@@ -43,7 +84,12 @@ static void *GetCdmHost(int aHostInterfaceVersion, void *aUserData) {
 
   WidevineAdapter *decryptor = reinterpret_cast<WidevineAdapter *>(aUserData);
 
-  return static_cast<cdm::Host_8 *>(decryptor);
+  if (aHostInterfaceVersion != cdm::Host_11::kVersion) {
+    WARN_PRINT("Unsupported Widevine host interface version "
+               << aHostInterfaceVersion);
+    return nullptr;
+  }
+  return static_cast<cdm::Host_11 *>(decryptor);
 }
 
 cdm::ContentDecryptionModule *WidevineAdapter::CreateCdmInstance() {
@@ -55,10 +101,10 @@ cdm::ContentDecryptionModule *WidevineAdapter::CreateCdmInstance() {
   }
 
   // Value com.widevine.alpha found out at http://www.codelive.cn/?id=10
-  cdm::ContentDecryptionModule *cdm =
+    cdm::ContentDecryptionModule *cdm =
       reinterpret_cast<cdm::ContentDecryptionModule *>(createCdmInstance(
-          cdm::ContentDecryptionModule::kVersion, "com.widevine.alpha",
-          18 /*size of "com.widevine.alpha"*/, &GetCdmHost, this));
+        cdm::ContentDecryptionModule_11::kVersion, "com.widevine.alpha",
+        18 /*size of "com.widevine.alpha"*/, &GetCdmHost, this));
   if (!cdm) {
     ERROR_PRINT("Calling createCdmInstance failed");
     return nullptr;
@@ -70,17 +116,41 @@ cdm::ContentDecryptionModule *WidevineAdapter::CreateCdmInstance() {
 }
 
 void WidevineAdapter::Shutdown() {
+  {
+    std::lock_guard<std::mutex> lock(timerMutex_);
+    stopTimers_ = true;
+    timers_.clear();
+  }
+  timerChanged_.notify_all();
+  if (timerThread_.joinable()) {
+    timerThread_.join();
+  }
+
+  if (cdm_ != nullptr) {
+    std::string sessionId;
+    {
+      std::lock_guard<std::mutex> lock(stateMutex_);
+      sessionId = cdmSessionId_;
+    }
+    if (!sessionId.empty()) {
+      cdm_->CloseSession(BeginPromise(), sessionId.c_str(), sessionId.size());
+    }
+    cdm_->Destroy();
+    cdm_ = nullptr;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(stateMutex_);
+    messageValid_ = false;
+    message_.clear();
+    cdmSessionId_.clear();
+    validKeyIds_.clear();
+    promiseResults_.clear();
+  }
+
   if (libwidevine_ == nullptr) {
     return;
   }
-
-  cdm_->CloseSession(0, cdmSessionId_.c_str(), cdmSessionId_.size());
-  cdm_->Destroy();
-  messageValid_ = false;
-  message_ = "";
-  cdmSessionId_ = "";
-  validKeyIds_.clear();
-  cdm_ = nullptr;
 
   decltype(::DeinitializeCdmModule) *deinit;
   deinit = reinterpret_cast<decltype(deinit)>(
@@ -114,21 +184,117 @@ const char *WidevineAdapter::GetCdmVersion() {
 //
 // @WidevineAdapter cdm::ContentDecryptionModule wrapper
 //
-void WidevineAdapter::CreateSessionAndGenerateRequest(const uint8_t *initData,
+bool WidevineAdapter::CreateSessionAndGenerateRequest(const uint8_t *initData,
                                                       uint32_t initDataSize) {
-  cdm_->CreateSessionAndGenerateRequest(0, cdm::SessionType::kTemporary,
+  const uint32_t promiseId = BeginPromise();
+  {
+    std::lock_guard<std::mutex> lock(stateMutex_);
+    messageValid_ = false;
+    message_.clear();
+    callbackError_.clear();
+  }
+  cdm_->CreateSessionAndGenerateRequest(promiseId, cdm::SessionType::kTemporary,
                                         cdm::InitDataType::kCenc, initData,
                                         initDataSize);
+  return WaitForPromise(promiseId);
 }
 
 void WidevineAdapter::SetServerCertificate(const uint8_t *certData,
                                            uint32_t certDataSize) {
-  cdm_->SetServerCertificate(0, certData, certDataSize);
+  const uint32_t promiseId = BeginPromise();
+  cdm_->SetServerCertificate(promiseId, certData, certDataSize);
+  WaitForPromise(promiseId);
 }
 
-void WidevineAdapter::UpdateSession(const uint8_t *data, uint32_t dataSize) {
-  cdm_->UpdateSession(0, cdmSessionId_.c_str(), cdmSessionId_.size(), data,
+bool WidevineAdapter::UpdateSession(const uint8_t *data, uint32_t dataSize) {
+  std::string sessionId;
+  {
+    std::lock_guard<std::mutex> lock(stateMutex_);
+    sessionId = cdmSessionId_;
+  }
+  if (sessionId.empty()) {
+    ERROR_PRINT("Cannot update Widevine session before a session is established");
+    return false;
+  }
+  const uint32_t promiseId = BeginPromise();
+  cdm_->UpdateSession(promiseId, sessionId.c_str(), sessionId.size(), data,
                       dataSize);
+  return WaitForPromise(promiseId);
+}
+
+uint32_t WidevineAdapter::BeginPromise() {
+  const uint32_t promiseId = nextPromiseId_.fetch_add(1);
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  promiseResults_[promiseId] = -1;
+  return promiseId;
+}
+
+bool WidevineAdapter::WaitForPromise(uint32_t promiseId) {
+  std::unique_lock<std::mutex> lock(stateMutex_);
+  const bool completed = stateChanged_.wait_for(
+      lock, kCallbackTimeout,
+      [this, promiseId] { return promiseResults_[promiseId] != -1; });
+  if (!completed) {
+    promiseResults_.erase(promiseId);
+    callbackError_ = "Timed out waiting for Widevine CDM promise";
+    ERROR_PRINT(callbackError_);
+    return false;
+  }
+  const bool succeeded = promiseResults_[promiseId] == 1;
+  promiseResults_.erase(promiseId);
+  if (!succeeded) {
+    ERROR_PRINT("Widevine CDM promise failed: " << callbackError_);
+  }
+  return succeeded;
+}
+
+bool WidevineAdapter::WaitForMessage(std::string &message) {
+  std::unique_lock<std::mutex> lock(stateMutex_);
+  const bool completed = stateChanged_.wait_for(
+      lock, kCallbackTimeout,
+      [this] { return messageValid_ || !callbackError_.empty(); });
+  if (!completed || !messageValid_) {
+    if (!completed) {
+      callbackError_ = "Timed out waiting for Widevine license challenge";
+    }
+    ERROR_PRINT(callbackError_);
+    return false;
+  }
+  message = message_;
+  messageValid_ = false;
+  return true;
+}
+
+int WidevineAdapter::ValidKeyIdsSize() {
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  return static_cast<int>(validKeyIds_.size());
+}
+
+void WidevineAdapter::TimerLoop() {
+  std::unique_lock<std::mutex> lock(timerMutex_);
+  while (!stopTimers_) {
+    if (timers_.empty()) {
+      timerChanged_.wait(lock, [this] { return stopTimers_ || !timers_.empty(); });
+      continue;
+    }
+
+    const auto deadline = timers_.begin()->first;
+    if (timerChanged_.wait_until(lock, deadline) != std::cv_status::timeout) {
+      continue;
+    }
+    if (stopTimers_ || timers_.empty() || timers_.begin()->first >
+                                           std::chrono::steady_clock::now()) {
+      continue;
+    }
+    void *context = timers_.begin()->second;
+    timers_.erase(timers_.begin());
+    cdm::ContentDecryptionModule *cdm = cdm_;
+    lock.unlock();
+    if (cdm != nullptr) {
+      cdm->TimerExpired(context);
+    }
+    lock.lock();
+  }
 }
 
 cdm::Status WidevineAdapter::InitCdmVideoDecoder(
@@ -212,7 +378,18 @@ cdm::Buffer *WidevineAdapter::Allocate(uint32_t aCapacity) {
   return new (std::nothrow) WidevineBuffer(aCapacity);
 }
 
-void WidevineAdapter::SetTimer(int64_t aDelayMs, void *aContext) {}
+void WidevineAdapter::SetTimer(int64_t aDelayMs, void *aContext) {
+  const auto delay = std::chrono::milliseconds(std::max<int64_t>(0, aDelayMs));
+  {
+    std::lock_guard<std::mutex> lock(timerMutex_);
+    if (stopTimers_) {
+      return;
+    }
+    timers_.insert(std::make_pair(std::chrono::steady_clock::now() + delay,
+                                  aContext));
+  }
+  timerChanged_.notify_all();
+}
 
 cdm::Time WidevineAdapter::GetCurrentWallTime() {
   std::chrono::milliseconds now =
@@ -224,35 +401,75 @@ cdm::Time WidevineAdapter::GetCurrentWallTime() {
          static_cast<double>(std::chrono::milliseconds::period::den);
 }
 
+void WidevineAdapter::OnInitialized(bool aSuccess) {
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  initialized_ = true;
+  initializationSucceeded_ = aSuccess;
+  stateChanged_.notify_all();
+}
+
+void WidevineAdapter::OnResolveKeyStatusPromise(uint32_t aPromiseId,
+                                               cdm::KeyStatus aKeyStatus) {
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  auto promise = promiseResults_.find(aPromiseId);
+  if (promise != promiseResults_.end()) {
+    promise->second = aKeyStatus == cdm::KeyStatus::kUsable ? 1 : 0;
+  }
+  stateChanged_.notify_all();
+}
+
 void WidevineAdapter::OnResolveNewSessionPromise(uint32_t aPromiseId,
                                                  const char *aSessionId,
                                                  uint32_t aSessionIdSize) {
-  if (!cdmSessionId_.empty()) {
-    WARN_PRINT("Already a session established: "
-               << cdmSessionId_ << "! Overwriting session id.");
-  }
   INFO_PRINT("WidevineDecryptor::OnResolveNewSessionPromise promiseId="
              << aPromiseId << ", aSessionId=" << aSessionId);
-  cdmSessionId_ = std::string(aSessionId, aSessionIdSize);
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  auto promise = promiseResults_.find(aPromiseId);
+  if (promise != promiseResults_.end()) {
+    promise->second = aSessionId ? 1 : 0;
+  }
+  if (aSessionId) {
+    cdmSessionId_.assign(aSessionId, aSessionIdSize);
+  } else {
+    callbackError_ = "Widevine CDM did not establish a session";
+  }
+  stateChanged_.notify_all();
 }
 
 void WidevineAdapter::OnResolvePromise(uint32_t aPromiseId) {
   INFO_PRINT("WidevineDecryptor::OnResolvePromise promiseId=" << aPromiseId);
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  auto promise = promiseResults_.find(aPromiseId);
+  if (promise != promiseResults_.end()) {
+    promise->second = 1;
+  }
+  stateChanged_.notify_all();
 }
 
-void WidevineAdapter::OnRejectPromise(uint32_t aPromiseId, cdm::Error aError,
+void WidevineAdapter::OnRejectPromise(uint32_t aPromiseId,
+                                      cdm::Exception aException,
                                       uint32_t aSystemCode,
                                       const char *aErrorMessage,
                                       uint32_t aErrorMessageSize) {
-  INFO_PRINT("WidevineDecryptor::OnRejectPromise promiseId="
-             << aPromiseId << ", system code=" << aSystemCode
-             << ", error: " << aError);
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  std::ostringstream message;
+  message << "promise " << aPromiseId << " rejected (exception="
+          << static_cast<uint32_t>(aException) << ", system code="
+          << aSystemCode << "): ";
+  if (aErrorMessage && aErrorMessageSize) {
+    message.write(aErrorMessage, aErrorMessageSize);
+  }
+  callbackError_ = message.str();
+  auto promise = promiseResults_.find(aPromiseId);
+  if (promise != promiseResults_.end()) {
+    promise->second = 0;
+  }
+  stateChanged_.notify_all();
 }
 
 void WidevineAdapter::OnSessionMessage(
     const char *aSessionId, uint32_t aSessionIdSize,
-    cdm::MessageType aMessageType, const char *aMessage, uint32_t aMessageSize,
-    const char *aLegacyDestinationUrl, uint32_t aLegacyDestinationUrlLength) {
+  cdm::MessageType aMessageType, const char *aMessage, uint32_t aMessageSize) {
   // Get e.g. the widevine challenge needed to send
   // to the license server for a license request
   //
@@ -265,13 +482,15 @@ void WidevineAdapter::OnSessionMessage(
   // };
   INFO_PRINT("WidevineDecryptor::OnSessionMessage: aSessionId="
              << aSessionId << ", messageType=" << aMessageType
-             << ", aMessageSize=" << aMessageSize
-             << ", aLegacyDestinationUrlLength='" << aLegacyDestinationUrlLength
-             << "'");
+             << ", aMessageSize=" << aMessageSize);
 
-  messageType_ = aMessageType;
-  message_ = std::string(aMessage, aMessageSize);
-  messageValid_ = true;
+  {
+    std::lock_guard<std::mutex> lock(stateMutex_);
+    messageType_ = aMessageType;
+    message_.assign(aMessage, aMessageSize);
+    messageValid_ = true;
+  }
+  stateChanged_.notify_all();
 }
 
 void WidevineAdapter::OnSessionKeysChange(const char *aSessionId,
@@ -293,6 +512,8 @@ void WidevineAdapter::OnSessionKeysChange(const char *aSessionId,
   //  kStatusPending = 5,
   //  kReleased = 6
   //};
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  validKeyIds_.clear();
   for (size_t i = 0; i < aKeysInfoCount; i++) {
     printf("cdm::KeyInformation[%zu]: \n", i);
     printf("key-id= 0x");
@@ -311,7 +532,7 @@ void WidevineAdapter::OnSessionKeysChange(const char *aSessionId,
     }
   }
 
-  messageValid_ = false;
+  stateChanged_.notify_all();
 }
 
 void WidevineAdapter::OnExpirationChange(const char *aSessionId,
@@ -322,14 +543,15 @@ void WidevineAdapter::OnExpirationChange(const char *aSessionId,
 }
 
 void WidevineAdapter::OnSessionClosed(const char *aSessionId,
-                                      uint32_t aSessionIdSize) {}
-
-void WidevineAdapter::OnLegacySessionError(const char *aSessionId,
-                                           uint32_t aSessionId_length,
-                                           cdm::Error aError,
-                                           uint32_t aSystemCode,
-                                           const char *aErrorMessage,
-                                           uint32_t aErrorMessageLength) {}
+                                      uint32_t aSessionIdSize) {
+  std::lock_guard<std::mutex> lock(stateMutex_);
+  if (aSessionId &&
+      cdmSessionId_ == std::string(aSessionId, aSessionIdSize)) {
+    cdmSessionId_.clear();
+    validKeyIds_.clear();
+  }
+  stateChanged_.notify_all();
+}
 
 void WidevineAdapter::SendPlatformChallenge(const char *aServiceId,
                                             uint32_t aServiceIdSize,
@@ -352,4 +574,18 @@ void WidevineAdapter::OnDeferredInitializationDone(cdm::StreamType aStreamType,
 // https://dxr.mozilla.org/mozilla-central/source/dom/media/gmp/widevine-adapter/WidevineFileIO.h
 cdm::FileIO *WidevineAdapter::CreateFileIO(cdm::FileIOClient *aClient) {
   return nullptr;
+}
+
+void WidevineAdapter::RequestStorageId(uint32_t aVersion) {
+  // Persistent state is disabled in Initialize(), so no device identifier is
+  // available to this host.
+  if (cdm_) {
+    cdm_->OnStorageId(aVersion, nullptr, 0);
+  }
+}
+
+void WidevineAdapter::ReportMetrics(cdm::MetricName aMetricName,
+                                    uint64_t aValue) {
+  (void)aMetricName;
+  (void)aValue;
 }

@@ -8,61 +8,72 @@ No advanced features such as subtitles or seeking to a certain time in the video
 supported. Video Rendering on ARM devices, especially the Raspberry Pi 3 is prepared, but not working
 fully due to performance issues.
 
+### Widevine compatibility
+
+The Linux adapter targets the stable Chromium CDM module ABI 4 with CDM/Host interface version 11.
+The CDM binary is not included in this repository; place a compatible, appropriately licensed Linux
+binary at `/usr/local/lib/libwidevinecdm.so`. The adapter requests interface version 11 and fails
+initialization if the binary does not provide it. Mozilla's current adapter supports stable interface
+versions 11 and 10; its interface 12 is still marked unstable. This implementation does not yet provide
+the interface-10 fallback, Firefox/Chrome host-verification files, persistent storage, or a verified
+current Widevine binary. Therefore compatibility must be confirmed with the exact CDM binary installed.
+
+CDM initialization, challenge delivery, and license updates are completed through callbacks with a
+20-second timeout; the frontend no longer uses fixed three-second sleeps for these operations.
+
 ## Installation
 
-Testing was mainly done on Manjaro Linux/Arch Linux which is also the recommended distro for installation.
-On the Raspberry Pi 3 Arch Linux and Raspbian where used.
+The original project was tested on Manjaro/Arch Linux and Raspberry Pi. The desktop build instructions
+below target current Linux Mint releases (Ubuntu-based). Raspberry Pi-specific dependencies are listed
+in the appendix.
 
 ### Install Dependencies
 
-- Python3 (packages: lxml, beautifulsoup4, requests, MechanicalSoup, pyCrypto)
-- Python2 (packages: mechanize, beautifulsoup4)
-- libav
-- libcurl4
-- SDL2 (MMAL and ALSA on the Pi)
+Install the compiler, CMake, SDL2 **development** headers, FFmpeg development libraries, ALSA, curl,
+and NSS runtime packages using APT:
 
 ```
-# basic build tools and utility
-sudo pacman -S cmake git gcc wget tar
-# dependencies
-sudo pacman -S python python2 python-lxml
-sudo pacman -S python-pip && sudo pip install -r requirements.txt
-sudo sudo pacman -S python2-pip && sudo pip2 install mechanize bs4
-sudo pacman -S nss            # required by libwidevinecdm.so
-# ffmpeg (libav)
-sudo pacman -S ffmpeg
-# SDL2
-sudo pacman -S sdl2
+sudo apt update
+sudo apt install build-essential cmake git pkg-config wget tar \
+  python3 python3-dev python3-pip python3-lxml python3-pycryptodome \
+  python3-mechanize \
+  libsdl2-dev libavcodec-dev libavformat-dev libavutil-dev \
+  libcurl4-openssl-dev libasound2-dev libnss3
 ```
+
+`libsdl2-dev` is the package that provides `SDL2/SDL.h`; installing only the SDL2 runtime does not
+provide the header that caused the reported build failure. The CMake project enables its SDL renderer
+by default on desktop Linux. To build without SDL2 instead, pass `-DUSE_LIBSDL_RENDERER=OFF` (the
+default renderer is a non-rendering fallback).
+
+The Python 2 packages from the historical instructions are not needed; Amazon login now runs with
+Python 3 and Mechanize. The frontend uses PyCryptodome for AES: Linux Mint's `python3-pycryptodome`
+package exposes it as `Cryptodome`, while the PyPI package in `requirements.txt` also supports the
+historical `Crypto` import.
 
 ### Get Source Code and Build it
 
 ```
 git clone <repo-url>
 
-# Get and build dependencies
-cd widevine_adapter/lib
-# download widevine cdm
-./get_cdm.sh
+# Copy the Widevine CDM installed by Firefox/Chrome/Chromium into the project
+./lib/get_cdm.sh
 # Clone and build Bento4 library
-# Note the master branch is always tested/used
 git clone https://github.com/sg-dev1/Bento4.git
 cd Bento4
 mkdir cmakebuild
 cd cmakebuild
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j 4
+cmake --build . --parallel 4
 
 # Build the library
 cd ../../../wvAdapter/lib
-mkdir build
-cd build
-cmake ..
-make -j 4
+cmake -S . -B build -DUSE_LIBSDL_RENDERER=ON -DBUILD_TEST_CASES=OFF
+cmake --build build --parallel 4
 
 # Build and install the python extension
 cd ../../..
-sudo python setup.py install
+sudo python3 setup.py install
 ```
 
 ## Quick Start Example

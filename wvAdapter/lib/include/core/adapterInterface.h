@@ -21,7 +21,7 @@ public:
   bool CreateSessionAndGenerateRequest(const uint8_t *initData,
                                        uint32_t initDataSize, STREAM_TYPE type);
   void SetServerCertificate(const uint8_t *certData, uint32_t certDataSize);
-  void UpdateCurrentSession(const uint8_t *data, uint32_t dataSize,
+  bool UpdateCurrentSession(const uint8_t *data, uint32_t dataSize,
                             STREAM_TYPE type);
 
   std::string GetSessionMessage(STREAM_TYPE type);
