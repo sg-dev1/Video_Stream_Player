@@ -5,6 +5,7 @@
 // required by dlopen & co
 #include <dlfcn.h>
 #include <algorithm>
+#include <cstdlib>
 #include <sstream>
 
 namespace {
@@ -20,6 +21,11 @@ WidevineAdapter::~WidevineAdapter() { Shutdown(); }
 // @WidevineAdapter
 //
 bool WidevineAdapter::Init() {
+  const char *cdmPath = std::getenv("WV_ADAPTER_CDM_PATH");
+  if (cdmPath && *cdmPath) {
+    libpath_ = cdmPath;
+  }
+
   {
     std::lock_guard<std::mutex> lock(timerMutex_);
     stopTimers_ = false;

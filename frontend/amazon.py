@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 from http.cookiejar import LWPCookieJar
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import urljoin, urlparse, urlsplit
 from bs4 import BeautifulSoup
 
 import constants
@@ -117,20 +117,20 @@ class Amazon(object):
         # NOTE code taken from 'old' version
         #  TODO refactor, e.g. using marshmallow
         #
-        # get 'base url'
-        parsedUrl = urlparse(url)
-        baseUrl = "".join([parsedUrl.scheme, "://", parsedUrl.netloc, os.path.dirname(parsedUrl.path)])
+        manifestUrl = response.url
 
         mpd_ = mpd.Mpd()
         adaptionSets = soup.find_all('AdaptationSet')
         for aSet in adaptionSets:
             adaptionSet = mpd.AdaptionSet()
-            adaptionSet.contentType = aSet["contentType"]
-            adaptionSet.mimeType = aSet["mimeType"]
+            adaptionSet.contentType = aSet.get("contentType", "")
+            adaptionSet.mimeType = aSet.get("mimeType", "")
+            if adaptionSet.contentType not in ("audio", "video"):
+                continue
             if adaptionSet.contentType == "video":
-                adaptionSet.format = aSet["par"]
+                adaptionSet.format = aSet.get("par", "")
             elif adaptionSet.contentType == "audio":
-                adaptionSet.lang = aSet["lang"]
+                adaptionSet.lang = aSet.get("lang", "")
 
             widevineProt = aSet.find('ContentProtection',
                                      attrs={'schemeIdUri': 'urn:uuid:EDEF8BA9-79D6-4ACE-A3C8-27DCD51D21ED'})
@@ -148,28 +148,49 @@ class Amazon(object):
 
             representations = aSet.find_all('Representation')
             for rep in representations:
+                codecPrivateData = rep.get("codecPrivateData", "")
                 if rep.has_attr("width"):
                     representation = mpd.VideoRepresentation()
                     representation.width = rep["width"]
                     representation.height = rep["height"]
-                    representation.codecPrivateData = bytes.fromhex(rep["codecPrivateData"])
+                    if codecPrivateData:
+                        representation.codecPrivateData = bytes.fromhex(codecPrivateData)
                 elif rep.has_attr("audioSamplingRate"):
                     representation = mpd.AudioRepresentation()
                     representation.samplingRate = rep["audioSamplingRate"]
                     representation.bandwidth = rep["bandwidth"]
                 else:
-                    print("Warning: Unknown Representation element found: {0}".format(rep))
-                    representation = mpd.Representation()
+                    continue
 
-                representation.mediaFileUrl = "{0}/{1}".format(baseUrl,
-                                                               rep.BaseURL.renderContents().strip().decode("utf-8"))
-                segmentList = rep.SegmentList
+                baseUrl = manifestUrl
+                period = aSet.find_parent("Period")
+                for parent in (soup.find("MPD"), period, aSet, rep):
+                    if parent:
+                        baseElement = parent.find("BaseURL", recursive=False)
+                        if baseElement:
+                            baseUrl = urljoin(baseUrl, baseElement.get_text(strip=True))
+                representation.mediaFileUrl = baseUrl
+
+                segmentList = rep.find("SegmentList", recursive=False)
+                segmentBase = rep.find("SegmentBase", recursive=False)
                 segLst = mpd.SegmentList()
-                segLst.duration = segmentList["duration"]
-                segLst.timescale = segmentList["timescale"]
-                segLst.initRange = segmentList.Initialization["range"]
-                for i in range(1, len(segmentList.contents)):
-                    segLst.addMediaRange(segmentList.contents[i]['mediaRange'])
+                if segmentList:
+                    segLst.duration = segmentList.get("duration", 0)
+                    segLst.timescale = segmentList.get("timescale", 0)
+                    initialization = segmentList.find("Initialization", recursive=False)
+                    segLst.initRange = initialization.get("range", "") if initialization else ""
+                    for segment in segmentList.find_all("SegmentURL", recursive=False):
+                        mediaRange = segment.get("mediaRange")
+                        if mediaRange:
+                            segLst.addMediaRange(mediaRange)
+                elif segmentBase:
+                    initialization = segmentBase.find("Initialization", recursive=False)
+                    segLst.initRange = initialization.get("range", "") if initialization else ""
+                    segLst.indexRange = segmentBase.get("indexRange", "")
+                else:
+                    raise ApplicationException(
+                        "Representation has neither SegmentList nor SegmentBase"
+                    )
                 representation.segmentList = segLst
                 adaptionSet.addRepresentation(representation)
 

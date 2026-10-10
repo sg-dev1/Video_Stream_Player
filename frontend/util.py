@@ -2,6 +2,7 @@ import base64
 import logging
 import os
 import json
+import re
 import uuid
 from platform import node
 from getpass import getpass
@@ -31,13 +32,47 @@ headers = {
 
 def downloadByteRange(url, _range):
     LOG.info("Trying to download from %s byterange %s" % (url, _range))
-    headers["Range"] = "bytes={0}".format(_range)
-    response = requests.get(url, headers=headers)
+    requestHeaders = dict(headers)
+    requestHeaders["Range"] = "bytes={0}".format(_range)
+    response = requests.get(url, headers=requestHeaders)
     if not (response.status_code == 200 or response.status_code == 206):
         msg = "Status must be 200 OK or 206 Partial Content but was %s" % response.status_code
         LOG.error(msg)
         raise ApplicationException(msg)
     return response.content
+
+
+def resolveSegmentBaseRanges(representation):
+    """Fetch a DASH SegmentBase index and resolve its SIDX media ranges."""
+    segment = representation.segmentList
+    if not segment or not segment.indexRange:
+        return
+
+    match = re.fullmatch(r"(\d+)-(\d+)", segment.indexRange)
+    if not match:
+        raise ApplicationException("Invalid SegmentBase indexRange")
+    rangeStart, rangeEnd = map(int, match.groups())
+    if rangeEnd < rangeStart:
+        raise ApplicationException("Invalid SegmentBase indexRange")
+
+    requestHeaders = dict(headers)
+    requestHeaders["Range"] = "bytes=%d-%d" % (rangeStart, rangeEnd)
+    response = requests.get(representation.mediaFileUrl, headers=requestHeaders)
+    if response.status_code != 206:
+        raise ApplicationException(
+            "SegmentBase index request expected HTTP 206, got %d" % response.status_code
+        )
+
+    contentRange = response.headers.get("Content-Range", "")
+    contentRangeMatch = re.fullmatch(r"bytes (\d+)-(\d+)/(?:\d+|\*)", contentRange)
+    if not contentRangeMatch or tuple(map(int, contentRangeMatch.groups())) != (rangeStart, rangeEnd):
+        raise ApplicationException("SegmentBase index response has an unexpected Content-Range")
+
+    try:
+        mediaRanges = mpd.parse_sidx_references(response.content, rangeStart)
+    except ValueError as exc:
+        raise ApplicationException("Could not parse SegmentBase SIDX index: %s" % exc)
+    segment.mediaRangeLst.extend(mediaRanges)
 
 
 def downloadFile(url):
@@ -79,16 +114,21 @@ def selectVideoAndAudio(mpd_, width, height, audioAdaptionSetIndex=-1, audioInde
     # video stuff
     selectedVideoAdaptionSet = videoAdaptionSetLst[0]
     if videoIndex == -1:
-        possibleRepresentations = []
-        for rep in selectedVideoAdaptionSet.representationLst:
-            if rep.width == width and rep.height == height:
-                possibleRepresentations.append(rep)
-        numPossibleRepresentations = len(possibleRepresentations)
-        if numPossibleRepresentations <= 0:
-            LOG.error("No possible video representation found with video format %d:%d" % (width, height))
-            raise ApplicationException("No possible video representation found!")
-
-        selectedVideoRepresentation = possibleRepresentations[numPossibleRepresentations - 1]
+        representations = selectedVideoAdaptionSet.representationLst
+        possibleRepresentations = [rep for rep in representations
+                                   if rep.width <= width and rep.height <= height]
+        if possibleRepresentations:
+            selectedVideoRepresentation = max(
+                possibleRepresentations,
+                key=lambda rep: (rep.width * rep.height, rep.width, rep.height)
+            )
+        elif representations:
+            selectedVideoRepresentation = min(
+                representations,
+                key=lambda rep: (rep.width * rep.height, rep.width, rep.height)
+            )
+        else:
+            raise ApplicationException("No video representations are available")
     else:
         numRepresentations = len(selectedVideoAdaptionSet.representationLst)
         if videoIndex <= 0:

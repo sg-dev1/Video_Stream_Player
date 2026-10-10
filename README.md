@@ -71,6 +71,12 @@ cd ../../../wvAdapter/lib
 cmake -S . -B build -DUSE_LIBSDL_RENDERER=ON -DBUILD_TEST_CASES=OFF
 cmake --build build --parallel 4
 
+Run the generic DASH parser tests with `PYTHONPATH=frontend python3 -m unittest discover -s frontend/tests`.
+To test CDM v11 host integration without a browser CDM or Amazon service, configure the adapter with
+`-DBUILD_CDM_MOCK_TESTS=ON`, rebuild, then run `ctest --test-dir build --output-on-failure`. The local
+fake CDM checks ABI loading, asynchronous session/challenge callbacks, license-update completion, and
+key-status delivery; it does not establish compatibility with a production Widevine binary.
+
 # Build and install the python extension
 cd ../../..
 sudo python3 setup.py install

@@ -1,4 +1,7 @@
 
+import struct
+
+
 def prettyPrintList(lst):
     ret = str(lst)
     lenLst = len(lst)
@@ -170,6 +173,7 @@ class SegmentList(object):
         self._duration = 0
         self._timescale = 0
         self._initRange = ""
+        self._indexRange = ""
         self._mediaRangeLst = []
 
     @property
@@ -197,6 +201,14 @@ class SegmentList(object):
         self._initRange = value
 
     @property
+    def indexRange(self):
+        return self._indexRange
+
+    @indexRange.setter
+    def indexRange(self, value):
+        self._indexRange = value
+
+    @property
     def mediaRangeLst(self):
         return self._mediaRangeLst
 
@@ -208,6 +220,79 @@ class SegmentList(object):
 
         return "SegmentList( duration={0}, timescale={1}, initRange={2}, mediaRangeLst={3} )" \
             .format(self._duration, self._timescale, self._initRange, mediaRangeLstStr)
+
+
+def parse_sidx_references(data, absolute_offset):
+    """Return byte ranges for direct references in an ISO-BMFF SIDX box."""
+    view = memoryview(data)
+    offset = 0
+
+    while offset + 8 <= len(view):
+        box_size = struct.unpack_from(">I", view, offset)[0]
+        box_type = bytes(view[offset + 4:offset + 8])
+        header_size = 8
+
+        if box_size == 1:
+            if offset + 16 > len(view):
+                raise ValueError("Truncated extended MP4 box header")
+            box_size = struct.unpack_from(">Q", view, offset + 8)[0]
+            header_size = 16
+        elif box_size == 0:
+            box_size = len(view) - offset
+
+        if box_size < header_size or offset + box_size > len(view):
+            raise ValueError("Invalid MP4 box size")
+        if box_type != b"sidx":
+            offset += box_size
+            continue
+
+        payload = offset + header_size
+        if payload + 12 > offset + box_size:
+            raise ValueError("Truncated SIDX box")
+
+        version = view[payload]
+        if version not in (0, 1):
+            raise ValueError("Unsupported SIDX version %d" % version)
+
+        cursor = payload + 4  # version and flags
+        cursor += 8  # reference_ID and timescale
+        time_offset_size = 8 if version == 1 else 4
+        cursor += time_offset_size * 2  # earliest presentation time, first_offset
+        cursor += 2  # reserved
+        if cursor + 2 > offset + box_size:
+            raise ValueError("Truncated SIDX reference count")
+        reference_count = struct.unpack_from(">H", view, cursor)[0]
+        cursor += 2
+
+        if cursor + reference_count * 12 > offset + box_size:
+            raise ValueError("Truncated SIDX references")
+
+        first_offset_position = payload + 4 + 8 + time_offset_size
+        if version == 1:
+            first_offset = struct.unpack_from(">Q", view, first_offset_position)[0]
+        else:
+            first_offset = struct.unpack_from(">I", view, first_offset_position)[0]
+
+        next_range_start = absolute_offset + offset + box_size + first_offset
+        ranges = []
+        for _ in range(reference_count):
+            reference = struct.unpack_from(">I", view, cursor)[0]
+            reference_type = reference >> 31
+            referenced_size = reference & 0x7fffffff
+            cursor += 12  # reference, duration, SAP
+
+            if reference_type:
+                raise ValueError("Hierarchical SIDX references are unsupported")
+            if referenced_size == 0:
+                raise ValueError("SIDX reference has zero size")
+
+            range_end = next_range_start + referenced_size - 1
+            ranges.append("%d-%d" % (next_range_start, range_end))
+            next_range_start = range_end + 1
+
+        return ranges
+
+    raise ValueError("No SIDX box found in SegmentBase index range")
 
 
 class Representation(object):
@@ -251,6 +336,7 @@ class Representation(object):
 
 class VideoRepresentation(Representation):
     def __init__(self):
+        super().__init__()
         self._width = 0
         self._height = 0
 
@@ -277,6 +363,7 @@ class VideoRepresentation(Representation):
 
 class AudioRepresentation(Representation):
     def __init__(self):
+        super().__init__()
         self._samplingRate = 0
         self._bandwidth = 0
 

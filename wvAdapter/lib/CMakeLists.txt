@@ -10,6 +10,7 @@ set(LOG_LEVEL "Debug" CACHE String "Choose log level. One of 'Debug', 'Info', 'W
 set(BUILD_TYPE "Release" CACHE STRING "Choose the build type. One of 'Debug', 'Release'")
 set(BUILD_TYPE_VALUES "Debug;Release;RelWithDebInfo;MinSizeRel")
 set(BUILD_TEST_CASES False CACHE BOOL "Build test cases for the wvAdapter library as well.")
+set(BUILD_CDM_MOCK_TESTS False CACHE BOOL "Build a local mock-CDM integration test.")
 set_property(CACHE BUILD_TYPE PROPERTY STRINGS ${BUILD_TYPE_VALUES})
 
 set(CMAKE_BUILD_TYPE ${BUILD_TYPE})
@@ -178,6 +179,24 @@ add_definitions(${DEFINES})
 include_directories(${INCLUDE_DIRS})
 add_Library(WvAdapter SHARED ${HEADERS} ${SOURCES})
 target_link_libraries(WvAdapter ${LIBRARIES})
+
+if (BUILD_CDM_MOCK_TESTS)
+  enable_testing()
+  add_library(FakeWidevineCdm SHARED tests/fake_cdm.cc)
+  target_include_directories(FakeWidevineCdm PRIVATE ${INCLUDE_DIR}/third-party)
+
+  add_executable(widevine_adapter_mock_test tests/widevine_adapter_mock_test.cc)
+  target_include_directories(widevine_adapter_mock_test PRIVATE
+    ${INCLUDE_DIR}/common
+    ${INCLUDE_DIR}/core
+  )
+  target_link_libraries(widevine_adapter_mock_test WvAdapter)
+  add_test(NAME widevine_adapter_mock_test COMMAND widevine_adapter_mock_test)
+  set_tests_properties(widevine_adapter_mock_test PROPERTIES
+    ENVIRONMENT
+      "WV_ADAPTER_CDM_PATH=$<TARGET_FILE:FakeWidevineCdm>;LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:${LIB_DIR}/Bento4/cmakebuild:/usr/local/lib"
+  )
+endif()
 
 if (BUILD_TEST_CASES)
   include(${SRC_DIR}/cmake/GoogleTest.cmake)

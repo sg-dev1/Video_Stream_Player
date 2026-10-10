@@ -158,6 +158,8 @@ if __name__ == "__main__":
             selectedVideoRepresentation, selectedAudioRepresentation = \
                 selectVideoAndAudio(mpd_, width=width, height=height, audioAdaptionSetIndex=audioAdaptionSetIndex,
                                     audioIndex=audioIndex, videoIndex=videoIndex)
+            util.resolveSegmentBaseRanges(selectedVideoRepresentation)
+            util.resolveSegmentBaseRanges(selectedAudioRepresentation)
             videoFileUrl = selectedVideoRepresentation.mediaFileUrl
             audioFileUrl = selectedAudioRepresentation.mediaFileUrl
 
